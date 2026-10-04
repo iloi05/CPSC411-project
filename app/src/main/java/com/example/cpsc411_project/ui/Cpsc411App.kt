@@ -30,6 +30,7 @@ fun Cpsc411App() {
         composable(Routes.GAME) {
             GameScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+
             )
         }
 
