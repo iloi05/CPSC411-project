@@ -73,22 +73,41 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             happiness = happiness,
             modifier = Modifier.weight(1f)
         )
-
-        Button(onClick = onOpenSettings) {
-            Text("Open settings")
-        }
-        Text("Happiness: $happiness / 100")
-        LinearProgressIndicator(progress = { happiness / 100f })
-
-        Button(onClick = {
-            val newValue = (applyDecay() + 15).coerceIn(0, 100)
-            happiness = newValue
-            prefs.edit {
-                putInt("happiness", happiness)
-                putLong("lastUpdate", System.currentTimeMillis())
+        Column(
+            modifier = Modifier.offset(y = (-60).dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(onClick = onOpenSettings) {
+                Text("Open settings")
             }
-        }) {
-            Text("Play")
+            Text("Happiness: $happiness / 100")
+            LinearProgressIndicator(progress = { happiness / 100f })
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(onClick = {
+                    val newValue = (applyDecay() + 15).coerceIn(0, 100)
+                    happiness = newValue
+                    prefs.edit {
+                        putInt("happiness", happiness)
+                        putLong("lastUpdate", System.currentTimeMillis())
+                    }
+                }) {
+                    Text("Play")
+                }
+                Button(onClick = {
+                    val newValue = (applyDecay() + 5).coerceIn(0, 100)
+                    happiness = newValue
+                    prefs.edit {
+                        putInt("happiness", happiness)
+                        putLong("lastUpdate", System.currentTimeMillis())
+                    }
+                }) {
+                    Text("Pet")
+                }
+            }
         }
     }
 }
