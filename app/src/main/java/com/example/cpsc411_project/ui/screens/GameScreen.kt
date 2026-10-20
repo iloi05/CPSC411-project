@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import com.airbnb.lottie.compose.*
 import com.example.cpsc411_project.R
@@ -78,9 +79,17 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(onClick = onOpenSettings) {
-                Text("Open settings")
+            Button(onClick = onOpenSettings,
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(50.dp)
+            ) {
+                Text(
+                    text = "Open settings",
+                    fontSize = 20.sp
+                )
             }
+
             Text("Happiness: $happiness / 100")
             LinearProgressIndicator(progress = { happiness / 100f })
             Row(
@@ -94,8 +103,15 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         putInt("happiness", happiness)
                         putLong("lastUpdate", System.currentTimeMillis())
                     }
-                }) {
-                    Text("Play")
+                },
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(50.dp)
+                ) {
+                    Text(
+                        text = "Play",
+                        fontSize = 20.sp
+                    )
                 }
                 Button(onClick = {
                     val newValue = (applyDecay() + 5).coerceIn(0, 100)
@@ -104,8 +120,16 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         putInt("happiness", happiness)
                         putLong("lastUpdate", System.currentTimeMillis())
                     }
-                }) {
-                    Text("Pet")
+
+                },
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(50.dp)
+                ) {
+                    Text(
+                        text = "Pet",
+                        fontSize = 20.sp
+                    )
                 }
             }
         }
