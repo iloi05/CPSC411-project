@@ -3,6 +3,7 @@ package com.example.cpsc411_project.ui.screens
 import android.content.Context
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -12,9 +13,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
@@ -56,81 +63,110 @@ fun GameScreen(onOpenSettings: () -> Unit) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding() // <--- Added this line for safe area padding
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Your Pet: ${petType.replaceFirstChar { it.uppercase() }}",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary
+    // --- NEW: Outer Box for the background ---
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // If want to change background make sure to have/change the image named
+        // "game_background" in the res/drawable folder
+        Image(
+            painter = painterResource(id = R.drawable.game_background),
+            contentDescription = "Background",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop // Scales image to fill screen while maintaining aspect ratio
         )
 
-        PetDisplay(
-            petType = petType,
-            happiness = happiness,
-            modifier = Modifier.weight(1f)
-        )
+        // 2. The existing UI Column (now layered on top of the background)
         Column(
-            modifier = Modifier.offset(y = (-60).dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding() // <--- Keeps UI away from status bar
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(onClick = onOpenSettings,
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(50.dp)
-            ) {
-                Text(
-                    text = "Open settings",
-                    fontSize = 20.sp
-                )
-            }
+            // --- FIX 1: Text is now White, Bold, with a Black Shadow to stand out against the sky ---
+            Text(
+                text = "Your Pet: ${petType.replaceFirstChar { it.uppercase() }}",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    shadow = Shadow(
+                        color = Color.Black,
+                        offset = Offset(4f, 4f),
+                        blurRadius = 8f
+                    )
+                ),
+                color = Color.White
+            )
 
-            Text("Happiness: $happiness / 100")
-            LinearProgressIndicator(progress = { happiness / 100f })
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            PetDisplay(
+                petType = petType,
+                happiness = happiness,
+                modifier = Modifier.weight(1f)
+            )
+            Column(
+                modifier = Modifier.offset(y = (-60).dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = {
-                    val newValue = (applyDecay() + 15).coerceIn(0, 100)
-                    happiness = newValue
-                    prefs.edit {
-                        putInt("happiness", happiness)
-                        putLong("lastUpdate", System.currentTimeMillis())
-                    }
-                },
+                Button(onClick = onOpenSettings,
                     modifier = Modifier
-                        .width(100.dp)
+                        .width(200.dp)
                         .height(50.dp)
                 ) {
                     Text(
-                        text = "Play",
+                        text = "Open settings",
                         fontSize = 20.sp
                     )
                 }
-                Button(onClick = {
-                    val newValue = (applyDecay() + 5).coerceIn(0, 100)
-                    happiness = newValue
-                    prefs.edit {
-                        putInt("happiness", happiness)
-                        putLong("lastUpdate", System.currentTimeMillis())
-                    }
 
-                },
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(50.dp)
-                ) {
-                    Text(
-                        text = "Pet",
-                        fontSize = 20.sp
+                // --- Making the happiness text Black with a shadow ---
+                Text(
+                    text = "Happiness: $happiness / 100",
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
                     )
+                )
+                LinearProgressIndicator(progress = { happiness / 100f })
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(onClick = {
+                        val newValue = (applyDecay() + 15).coerceIn(0, 100)
+                        happiness = newValue
+                        prefs.edit {
+                            putInt("happiness", happiness)
+                            putLong("lastUpdate", System.currentTimeMillis())
+                        }
+                    },
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Play",
+                            fontSize = 20.sp
+                        )
+                    }
+                    Button(onClick = {
+                        val newValue = (applyDecay() + 5).coerceIn(0, 100)
+                        happiness = newValue
+                        prefs.edit {
+                            putInt("happiness", happiness)
+                            putLong("lastUpdate", System.currentTimeMillis())
+                        }
+
+                    },
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Pet",
+                            fontSize = 20.sp
+                        )
+                    }
                 }
             }
         }
