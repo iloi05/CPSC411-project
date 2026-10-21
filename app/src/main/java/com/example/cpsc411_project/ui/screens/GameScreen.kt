@@ -84,7 +84,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // --- FIX 1: Text is now White, Bold, with a Black Shadow to stand out against the sky ---
+            // --- Text is now White, Bold, with a Black Shadow to stand out against the sky ---
             Text(
                 text = "Your Pet: ${petType.replaceFirstChar { it.uppercase() }}",
                 style = MaterialTheme.typography.headlineMedium.copy(
