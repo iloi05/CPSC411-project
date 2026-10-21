@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.safeDrawingPadding // <--- Added import
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -41,7 +42,9 @@ fun LoadingScreen(onContinue: () -> Unit) {
     val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .safeDrawingPadding(), // <--- Added this line for safe area padding
         contentAlignment = Alignment.Center
     ) {
         Column(

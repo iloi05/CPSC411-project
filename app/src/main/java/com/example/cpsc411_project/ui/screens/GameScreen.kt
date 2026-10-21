@@ -59,6 +59,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .safeDrawingPadding() // <--- Added this line for safe area padding
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -80,9 +81,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Button(onClick = onOpenSettings,
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(50.dp)
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(50.dp)
             ) {
                 Text(
                     text = "Open settings",
