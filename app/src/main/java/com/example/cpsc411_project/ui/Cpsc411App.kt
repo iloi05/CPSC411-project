@@ -30,13 +30,20 @@ fun Cpsc411App() {
         composable(Routes.GAME) {
             GameScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) }
-
             )
         }
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onRepickPet = {
+                    // This handles the "Yes" button in the dialog
+                    navController.navigate(Routes.LOADING) {
+                        // Clears the entire back stack so the user can't press
+                        // the Android back button to return to the game.
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
     }
