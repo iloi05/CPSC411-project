@@ -44,7 +44,7 @@ fun LoadingScreen(onContinue: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .safeDrawingPadding(), // <--- Added this line for safe area padding
+            .safeDrawingPadding(), // <--- Added this line
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -59,7 +59,11 @@ fun LoadingScreen(onContinue: () -> Unit) {
                     petName = "Dog",
                     imageRes = R.drawable.dog, // Make sure the file is named dog.png
                     onClick = {
-                        prefs.edit { putString("pet_type", "dog") }
+                        prefs.edit {
+                            putString("pet_type", "dog")
+                            putInt("happiness", 50) // <--- Reset happiness
+                            putLong("lastUpdate", System.currentTimeMillis()) // <--- Reset timer
+                        }
                         onContinue()
                     }
                 )
@@ -67,7 +71,11 @@ fun LoadingScreen(onContinue: () -> Unit) {
                     petName = "Cat",
                     imageRes = R.drawable.cat, // Make sure the file is named cat.png
                     onClick = {
-                        prefs.edit { putString("pet_type", "cat") }
+                        prefs.edit {
+                            putString("pet_type", "cat")
+                            putInt("happiness", 50) // <--- Reset happiness
+                            putLong("lastUpdate", System.currentTimeMillis()) // <--- Reset timer
+                        }
                         onContinue()
                     }
                 )
