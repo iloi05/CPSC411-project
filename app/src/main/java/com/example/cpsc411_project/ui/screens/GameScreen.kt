@@ -51,6 +51,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val happinessTimeKey = "happinessUpdate_$petType"
     val hungerKey = "hunger_$petType"
     val hungerTimeKey = "hungerUpdate_$petType"
+    val cleanKey = "clean_$petType"
+    val cleanTimeKey = "cleanUpdate_$petType"
     fun applyDecay(valueKey: String, timeKey: String, default: Int): Int {
         val now = System.currentTimeMillis()
         val saved = prefs.getInt(valueKey, default)
@@ -73,12 +75,15 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
     var happiness by remember { mutableIntStateOf(prefs.getInt(happinessKey, 50)) }
     var hunger by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
+    var clean by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
 
     LaunchedEffect(Unit) {
         while (true) {
             happiness = applyDecay(happinessKey, happinessTimeKey, 50)
-            hunger = applyDecay(hungerKey, hungerTimeKey, 100)
+            hunger = applyDecay(hungerKey, hungerTimeKey, 50)
+            clean = applyDecay(cleanKey, cleanTimeKey, 50)
             delay(10.seconds)
+
         }
     }
 
@@ -131,6 +136,13 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
                 )
             )
+            Text(
+                text = "clean: $clean / 100",
+                color = Color.Black,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
+                )
+            )
 
             PetDisplay(
                 petType = petType,
@@ -154,32 +166,43 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
                         },
-                        modifier = Modifier.width(100.dp).height(50.dp)
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text("Play", fontSize = 20.sp)
+                        Text("Play", fontSize = 16.sp, maxLines = 1)
                     }
                     Button(
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
                         },
-                        modifier = Modifier.width(100.dp).height(50.dp)
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text("Pet", fontSize = 20.sp)
+                        Text("Pet", fontSize = 16.sp, maxLines = 1)
                     }
                     Button(
                         onClick = {
                             hunger = changeStat(hungerKey, hungerTimeKey, 100, 20)
                         },
-                        modifier = Modifier.width(100.dp).height(50.dp)
+                        modifier = Modifier.weight(1f).height(50.dp)
                     ) {
-                        Text("Feed", fontSize = 20.sp)
+                        Text("Feed", fontSize = 16.sp, maxLines = 1)
+                    }
+                    Button(
+                        onClick = {
+                            clean = changeStat(cleanKey, cleanTimeKey, 100, 20)
+                        },
+                        modifier = Modifier.weight(1f).height(50.dp)
+                    ) {
+                        Text("clean", fontSize = 16.sp, maxLines = 1)
                     }
                 }
             }
