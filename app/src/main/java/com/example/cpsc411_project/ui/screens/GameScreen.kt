@@ -47,6 +47,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
     val petType = remember { prefs.getString("pet_type", "dog") ?: "dog" }
+    // happiness and update keys depend on pet type
+    val happinessKey = "happiness_$petType"
+    val updateKey = "lastUpdate_$petType"
 
     fun applyDecay(): Int {
         val now = System.currentTimeMillis()
@@ -62,7 +65,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
         return current
     }
 
-    var happiness by remember { mutableIntStateOf(50) }
+    var happiness by remember { mutableIntStateOf(prefs.getInt("happiness", 50)) }
 
     LaunchedEffect(Unit) {
         happiness = applyDecay()
@@ -144,9 +147,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     Button(onClick = {
                         val newValue = (applyDecay() + 15).coerceIn(0, 100)
                         happiness = newValue
-                        prefs.edit {
-                            putInt("happiness", happiness)
-                            putLong("lastUpdate", System.currentTimeMillis())
+                        prefs.edit(commit = true) {
+                            putInt(happinessKey, happiness)
+                            putLong(updateKey, System.currentTimeMillis())
                         }
                     },
                         modifier = Modifier

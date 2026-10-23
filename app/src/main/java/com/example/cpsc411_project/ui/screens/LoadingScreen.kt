@@ -40,6 +40,13 @@ import com.example.cpsc411_project.R
 fun LoadingScreen(onContinue: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
+    // saving which pet was chosen
+    fun choosePet(type: String) {
+        prefs.edit(commit = true) {
+            putString("pet_type", type)
+        }
+        onContinue()
+    }
 
     Box(
         modifier = Modifier
@@ -58,26 +65,12 @@ fun LoadingScreen(onContinue: () -> Unit) {
                 PetSelectionCard(
                     petName = "Dog",
                     imageRes = R.drawable.dog, // Make sure the file is named dog.png
-                    onClick = {
-                        prefs.edit {
-                            putString("pet_type", "dog")
-                            putInt("happiness", 50) // <--- Reset happiness
-                            putLong("lastUpdate", System.currentTimeMillis()) // <--- Reset timer
-                        }
-                        onContinue()
-                    }
+                    onClick = { choosePet("dog") }
                 )
                 PetSelectionCard(
                     petName = "Cat",
                     imageRes = R.drawable.cat, // Make sure the file is named cat.png
-                    onClick = {
-                        prefs.edit {
-                            putString("pet_type", "cat")
-                            putInt("happiness", 50) // <--- Reset happiness
-                            putLong("lastUpdate", System.currentTimeMillis()) // <--- Reset timer
-                        }
-                        onContinue()
-                    }
+                    onClick = { choosePet("cat") }
                 )
             }
         }
