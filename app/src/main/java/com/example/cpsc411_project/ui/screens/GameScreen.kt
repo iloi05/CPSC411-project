@@ -122,27 +122,27 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 color = Color.White
             )
             // --- Making the happiness text Black with a shadow ---
-            Text(
-                text = "Happy: $happiness / 100",
-                color = Color.Black,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
-                )
-            )
-            Text(
-                text = "Hunger: $hunger / 100",
-                color = Color.Black,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
-                )
-            )
-            Text(
-                text = "clean: $clean / 100",
-                color = Color.Black,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
-                )
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                listOf(
+                    "Happy" to happiness,
+                    "Hunger" to hunger,
+                    "Clean" to clean
+                ).forEach { (label, value) ->
+                    Text(
+                        text = "$label: $value / 100",
+                        color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
+                        )
+                    )
+                }
+
+            }
+
 
             PetDisplay(
                 petType = petType,
