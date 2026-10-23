@@ -6,7 +6,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -49,29 +48,37 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val petType = remember { prefs.getString("pet_type", "dog") ?: "dog" }
     // happiness and update keys depend on pet type
     val happinessKey = "happiness_$petType"
-    val updateKey = "lastUpdate_$petType"
-
-    fun applyDecay(): Int {
+    val happinessTimeKey = "happinessUpdate_$petType"
+    val hungerKey = "hunger_$petType"
+    val hungerTimeKey = "hungerUpdate_$petType"
+    fun applyDecay(valueKey: String, timeKey: String, default: Int): Int {
         val now = System.currentTimeMillis()
-        val saved = prefs.getInt("happiness", 50)
-        val last = prefs.getLong("lastUpdate", now)
+        val saved = prefs.getInt(valueKey, default)
+        val last = prefs.getLong(timeKey, now)
         val intervals = ((now - last) / DECAY_INTERVAL_MS).toInt().coerceAtLeast(0)
         val current = (saved - intervals * POINTS_PER_INTERVAL).coerceIn(0, 100)
 
         prefs.edit {
-            putInt("happiness", current)
-            putLong("lastUpdate", last + intervals * DECAY_INTERVAL_MS)
+            putInt(valueKey, current)
+            putLong(timeKey, last + intervals * DECAY_INTERVAL_MS)
         }
         return current
     }
 
-    var happiness by remember { mutableIntStateOf(prefs.getInt("happiness", 50)) }
+    fun changeStat(valueKey: String, timeKey: String, default: Int, amount: Int): Int {
+        val newValue = (applyDecay(valueKey, timeKey, default) + amount).coerceIn(0, 100)
+        prefs.edit(commit = true) { putInt(valueKey, newValue) }
+        return newValue
+    }
+
+    var happiness by remember { mutableIntStateOf(prefs.getInt(happinessKey, 50)) }
+    var hunger by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
 
     LaunchedEffect(Unit) {
-        happiness = applyDecay()
         while (true) {
+            happiness = applyDecay(happinessKey, happinessTimeKey, 50)
+            hunger = applyDecay(hungerKey, hungerTimeKey, 100)
             delay(10.seconds)
-            happiness = applyDecay()
         }
     }
 
@@ -109,6 +116,21 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 ),
                 color = Color.White
             )
+            // --- Making the happiness text Black with a shadow ---
+            Text(
+                text = "Happy: $happiness / 100",
+                color = Color.Black,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
+                )
+            )
+            Text(
+                text = "Hunger: $hunger / 100",
+                color = Color.Black,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
+                )
+            )
 
             PetDisplay(
                 petType = petType,
@@ -131,53 +153,33 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     )
                 }
 
-                // --- Making the happiness text Black with a shadow ---
-                Text(
-                    text = "Happiness: $happiness / 100",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
-                    )
-                )
-                LinearProgressIndicator(progress = { happiness / 100f })
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(onClick = {
-                        val newValue = (applyDecay() + 15).coerceIn(0, 100)
-                        happiness = newValue
-                        prefs.edit(commit = true) {
-                            putInt(happinessKey, happiness)
-                            putLong(updateKey, System.currentTimeMillis())
-                        }
-                    },
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(50.dp)
+                    Button(
+                        onClick = {
+                            happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
+                        },
+                        modifier = Modifier.width(100.dp).height(50.dp)
                     ) {
-                        Text(
-                            text = "Play",
-                            fontSize = 20.sp
-                        )
+                        Text("Play", fontSize = 20.sp)
                     }
-                    Button(onClick = {
-                        val newValue = (applyDecay() + 5).coerceIn(0, 100)
-                        happiness = newValue
-                        prefs.edit {
-                            putInt("happiness", happiness)
-                            putLong("lastUpdate", System.currentTimeMillis())
-                        }
-
-                    },
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(50.dp)
+                    Button(
+                        onClick = {
+                            happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
+                        },
+                        modifier = Modifier.width(100.dp).height(50.dp)
                     ) {
-                        Text(
-                            text = "Pet",
-                            fontSize = 20.sp
-                        )
+                        Text("Pet", fontSize = 20.sp)
+                    }
+                    Button(
+                        onClick = {
+                            hunger = changeStat(hungerKey, hungerTimeKey, 100, 20)
+                        },
+                        modifier = Modifier.width(100.dp).height(50.dp)
+                    ) {
+                        Text("Feed", fontSize = 20.sp)
                     }
                 }
             }
