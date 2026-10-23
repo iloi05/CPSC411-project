@@ -1,6 +1,8 @@
 package com.example.cpsc411_project.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,6 +19,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import com.example.cpsc411_project.R
 
 @Composable
 fun SettingsScreen(
@@ -25,28 +33,45 @@ fun SettingsScreen(
 ) {
     // State to control whether the confirmation pop-up is visible
     var showRepickDialog by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxSize()) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeDrawingPadding() // <--- Added this line for safe area padding
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Settings screen placeholder",
-            style = MaterialTheme.typography.headlineSmall
+        // If you want to change background make sure to have/change the image named
+        // "game_background" in the res/drawable folder
+        Image(
+            painter = painterResource(id = R.drawable.game_background),
+            contentDescription = "Background",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop // Scales image to fill screen while maintaining aspect ratio
         )
 
-        // New Button to trigger the dialog
-        Button(onClick = { showRepickDialog = true }) {
-            Text("Repick Your Pet")
-        }
+        // 2. The existing UI Column (now layered on top of the background)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding() // <--- Keeps UI away from status bar
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Settings",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.headlineSmall
+            )
 
-        Button(onClick = onBack) {
-            Text("Back")
+            // New Button to trigger the dialog
+            Button(onClick = { showRepickDialog = true }) {
+                Text("Repick Your Pet")
+            }
+
+            Button(onClick = onBack) {
+                Text("Back")
+            }
         }
     }
+
+
 
     // The Pop-up Confirmation Dialog
     if (showRepickDialog) {
