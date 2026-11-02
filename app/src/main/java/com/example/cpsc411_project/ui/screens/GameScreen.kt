@@ -2,7 +2,6 @@ package com.example.cpsc411_project.ui.screens
 
 import android.content.Context
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -16,9 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,11 +89,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
         // If you want to change background make sure to have/change the image named
         // "game_background" in the res/drawable folder
-        Image(
-            painter = painterResource(id = R.drawable.game_background),
-            contentDescription = "Background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop // Scales image to fill screen while maintaining aspect ratio
+        TiledBackground(
+            sheetRes = R.drawable.interiorfree,
+            modifier = Modifier.fillMaxSize()
         )
 
         // 2. The existing UI Column (now layered on top of the background)
@@ -323,5 +318,45 @@ fun SpriteAnimation(
             dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
             filterQuality = FilterQuality.None
         )
+    }
+}
+@SuppressLint("LocalContextResourcesRead")
+@Composable
+fun TiledBackground(
+    sheetRes: Int,
+    modifier: Modifier = Modifier,
+    tileSize: Int = 16,
+    scale: Int = 6,
+    floorCol: Int = 7,
+    floorRow: Int = 3,
+    wallCol: Int = 8,
+    wallRow: Int = 0,
+    wallRows: Int = 3
+) {
+    val context = LocalContext.current
+    val sheet = remember(sheetRes) {
+        val opts = BitmapFactory.Options().apply { inScaled = false }
+        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
+    }
+    Canvas(modifier) {
+        val dst = tileSize * scale
+        val cols = (size.width / dst).toInt() + 1
+        val rows = (size.height / dst).toInt() + 1
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val isWall = r < wallRows
+                drawImage(
+                    image = sheet,
+                    srcOffset = IntOffset(
+                        (if (isWall) wallCol else floorCol) * tileSize,
+                        (if (isWall) wallRow else floorRow) * tileSize
+                    ),
+                    srcSize = IntSize(tileSize, tileSize),
+                    dstOffset = IntOffset(c * dst, r * dst),
+                    dstSize = IntSize(dst, dst),
+                    filterQuality = FilterQuality.None
+                )
+            }
+        }
     }
 }
