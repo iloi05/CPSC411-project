@@ -72,7 +72,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
     var happiness by remember { mutableIntStateOf(prefs.getInt(happinessKey, 50)) }
     var hunger by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
-    var clean by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
+    var clean by remember { mutableIntStateOf(prefs.getInt(cleanKey, 50))}
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -129,7 +129,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 ).forEach { (label, value) ->
                     Text(
                         text = "$label: $value / 100",
-                        color = Color.Black,
+                        color = Color.White,
                         style = MaterialTheme.typography.titleMedium.copy(
                             shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
                         )
