@@ -123,13 +123,14 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 listOf(
-                    "Happy" to happiness,
-                    "Hunger" to hunger,
-                    "Clean" to clean
+                    "\uD83D\uDE0A" to happiness,
+                    "\uD83C\uDF7D\uFE0F" to hunger,
+                    "\uD83E\uDDFC" to clean
                 ).forEach { (label, value) ->
                     Text(
                         text = "$label: $value / 100",
                         color = Color.White,
+                        fontSize = 18.sp,
                         style = MaterialTheme.typography.titleMedium.copy(
                             shadow = Shadow(Color.Black, Offset(2f, 2f), 4f)
                         )
