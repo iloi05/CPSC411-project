@@ -87,6 +87,17 @@ fun GameScreen(onOpenSettings: () -> Unit) {
         }
     }
 
+    var playCount by remember { mutableIntStateOf(0) }
+    var isPlaying by remember { mutableStateOf(false) }
+
+    LaunchedEffect(playCount) {
+        if (playCount > 0) {
+            isPlaying = true
+            delay(2.seconds)
+            isPlaying = false
+        }
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             happiness = applyDecay(happinessKey, happinessTimeKey, 50)
@@ -110,6 +121,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             petType = petType,
             happiness = happiness,
             isEating = isEating,
+            isPlaying = isPlaying,
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding(),
@@ -188,6 +200,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     Button(
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
+                            playCount++
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
@@ -228,9 +241,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
 // Sprites go here
 // defining the numbers needed for a sprite animation
-private data class Anim(val row: Int, val frames: Int, val startCol: Int = 0, val sheetRes: Int? = null)
+private data class Anim(val row: Int, val frames: Int, val startCol: Int = 0, val sheetRes: Int? = null, val frameSize: Int = 64)
 // Defining everything needed to draw one sprite
-private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null)
+private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null, val playing: Anim? = null)
 // The png files for the animations are an array, start counting from 0 to find animation you want
 // Dog animations
 private val DOG_SPRITES = PetSprites(
@@ -243,7 +256,8 @@ private val CAT_SPRITES = PetSprites(
     sheetRes = R.drawable.cat_3,
     idle = Anim(row = 19, frames = 5),
     happy = Anim(row = 15, frames = 3),
-    eating = Anim(row = 0, frames = 8, sheetRes = R.drawable.cateating)
+    eating = Anim(row = 0, frames = 8, sheetRes = R.drawable.cateating),
+    playing = Anim(row = 0, frames = 4, sheetRes = R.drawable.box, frameSize = 32)
 )
 
 
@@ -254,6 +268,7 @@ fun PetDisplay(
     happiness: Int,
     modifier: Modifier = Modifier,
     isEating: Boolean = false,
+    isPlaying: Boolean = false,
     topInset: Dp = 0.dp,
     bottomInset: Dp = 0.dp
 ) {
@@ -279,13 +294,14 @@ fun PetDisplay(
     val sprites = if (petType == "cat") CAT_SPRITES else DOG_SPRITES
     val anim = when {
         isEating && sprites.eating != null -> sprites.eating
+        isPlaying && sprites.playing != null -> sprites.playing
         happiness == 100 -> sprites.happy
         else -> sprites.idle
     }
 
     val density = LocalDensity.current
     val petSizePx = with(density) { 256.dp.toPx() }
-    val catSize by animateDpAsState(if (isEating) 256.dp else 256.dp, label = "catSize")
+    val catSize by animateDpAsState(if (isPlaying) 128.dp else 256.dp, label = "catSize")
     // centers sprite, lets user drag sprite wherever
     Box(
         modifier = modifier
@@ -311,6 +327,7 @@ fun PetDisplay(
             row = anim.row,
             frameCount = anim.frames,
             startCol = anim.startCol,
+            frameSize = anim.frameSize,
             modifier = Modifier
                 .size(catSize)
                 .graphicsLayer {
@@ -334,7 +351,6 @@ fun PetDisplay(
                     }
             )
         }
-
     }
 }
 // calling SpriteAnimation to draw chosen animation sequence
