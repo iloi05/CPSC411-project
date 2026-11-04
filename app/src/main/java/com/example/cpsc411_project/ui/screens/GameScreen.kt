@@ -317,7 +317,7 @@ fun PetDisplay(
 
     val density = LocalDensity.current
     val petSizePx = with(density) { 256.dp.toPx() }
-    val catSize by animateDpAsState(if (isPlaying) 128.dp else 256.dp, label = "catSize")
+    val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
     // centers sprite, lets user drag sprite wherever
     Box(
         modifier = modifier
