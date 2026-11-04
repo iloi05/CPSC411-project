@@ -98,6 +98,17 @@ fun GameScreen(onOpenSettings: () -> Unit) {
         }
     }
 
+    var cleanCount by remember { mutableIntStateOf(0) }
+    var isCleaning by remember { mutableStateOf(false) }
+
+    LaunchedEffect(cleanCount) {
+        if (cleanCount > 0) {
+            isCleaning = true
+            delay(2.seconds)
+            isCleaning = false
+        }
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             happiness = applyDecay(happinessKey, happinessTimeKey, 50)
@@ -122,6 +133,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             happiness = happiness,
             isEating = isEating,
             isPlaying = isPlaying,
+            isCleaning = isCleaning,
             modifier = Modifier
                 .fillMaxSize()
                 .safeDrawingPadding(),
@@ -228,6 +240,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     Button(
                         onClick = {
                             clean = changeStat(cleanKey, cleanTimeKey, 100, 20)
+                            cleanCount++
                         },
                         modifier = Modifier.weight(1f).height(50.dp)
                     ) {
@@ -243,7 +256,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 // defining the numbers needed for a sprite animation
 private data class Anim(val row: Int, val frames: Int, val startCol: Int = 0, val sheetRes: Int? = null, val frameSize: Int = 64)
 // Defining everything needed to draw one sprite
-private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null, val playing: Anim? = null)
+private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null, val playing: Anim? = null, val cleaning: Anim? = null)
 // The png files for the animations are an array, start counting from 0 to find animation you want
 // Dog animations
 private val DOG_SPRITES = PetSprites(
@@ -257,7 +270,8 @@ private val CAT_SPRITES = PetSprites(
     idle = Anim(row = 19, frames = 5),
     happy = Anim(row = 15, frames = 3),
     eating = Anim(row = 0, frames = 8, sheetRes = R.drawable.cateating),
-    playing = Anim(row = 0, frames = 4, sheetRes = R.drawable.box, frameSize = 32)
+    playing = Anim(row = 0, frames = 4, sheetRes = R.drawable.box, frameSize = 32),
+    cleaning = Anim(row = 12, frames = 8)
 )
 
 
@@ -269,6 +283,7 @@ fun PetDisplay(
     modifier: Modifier = Modifier,
     isEating: Boolean = false,
     isPlaying: Boolean = false,
+    isCleaning: Boolean = false,
     topInset: Dp = 0.dp,
     bottomInset: Dp = 0.dp
 ) {
@@ -295,6 +310,7 @@ fun PetDisplay(
     val anim = when {
         isEating && sprites.eating != null -> sprites.eating
         isPlaying && sprites.playing != null -> sprites.playing
+        isCleaning && sprites.cleaning != null -> sprites.cleaning
         happiness == 100 -> sprites.happy
         else -> sprites.idle
     }
