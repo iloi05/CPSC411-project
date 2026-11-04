@@ -31,10 +31,10 @@ import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import androidx.compose.ui.unit.IntSize
 import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.platform.LocalDensity // movement limit
 import androidx.compose.ui.unit.Dp
-
 
 // Buttons and information for sprite go here
 private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
@@ -140,6 +140,18 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             topInset = 100.dp,
             bottomInset = 190.dp
         )
+        SpriteAnimation(
+            sheetRes = R.drawable.button,
+            row = 9,
+            frameCount = 1,
+            startCol = 8,
+            frameSize = 16,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 40.dp, end = 16.dp)
+                .size(64.dp)
+                .clickable(onClick = onOpenSettings)
+        )
 
         // 2. The existing UI Column (now layered on top of the background)
         Column(
@@ -193,16 +205,6 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = onOpenSettings,
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(50.dp)
-                ) {
-                    Text(
-                        text = "Open settings",
-                        fontSize = 20.sp
-                    )
-                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
