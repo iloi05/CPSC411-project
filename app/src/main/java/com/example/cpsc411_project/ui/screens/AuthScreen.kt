@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 
 @Composable
@@ -89,6 +90,8 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                     val savedPassword = prefs.getString("password", null)
 
                     if (email == savedEmail && password == savedPassword) {
+                        // Save login state
+                        prefs.edit(commit = true) { putBoolean("isLoggedIn", true) }
                         onAuthSuccess()
                     } else {
                         errorMessage = "Incorrect email or password."
@@ -97,13 +100,12 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                     // CREATE ACCOUNT LOGIC
                     val existingEmail = prefs.getString("email", null)
                     if (existingEmail != null && existingEmail != email) {
-                        // If you want to allow multiple accounts, you'd need a database or list.
-                        // For simplicity, this overwrites the previous account.
                         errorMessage = "An account already exists. Please log in or use a different email."
                     } else {
                         prefs.edit(commit = true) {
                             putString("email", email)
                             putString("password", password)
+                            putBoolean("isLoggedIn", true) // Save login state
                         }
                         onAuthSuccess()
                     }
@@ -113,7 +115,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text(if (isLoginMode) "Log In" else "Sign Up", fontSize = 18.sp())
+            Text(if (isLoginMode) "Log In" else "Sign Up", fontSize = 18.sp)
         }
 
         TextButton(
@@ -129,6 +131,3 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
         }
     }
 }
-
-// Helper extension to keep code clean
-private fun Int.sp() = androidx.compose.ui.unit.TextUnit(this.toFloat(), androidx.compose.ui.unit.TextUnitType.Sp)

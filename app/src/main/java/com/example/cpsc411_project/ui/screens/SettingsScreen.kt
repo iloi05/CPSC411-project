@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding // <--- Added import
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,10 +30,13 @@ import com.example.cpsc411_project.R
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onRepickPet: () -> Unit // <--- Added callback for navigating back to loading screen
+    onRepickPet: () -> Unit,
+    onLogout: () -> Unit // <--- Added logout callback
 ) {
-    // State to control whether the confirmation pop-up is visible
+    // State to control whether the confirmation pop-ups are visible
     var showRepickDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         // If you want to change background make sure to have/change the image named
@@ -65,18 +69,26 @@ fun SettingsScreen(
                 Text("Repick Your Pet")
             }
 
+            // Log Out Button
+            Button(
+                onClick = { showLogoutDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Log Out")
+            }
+
             Button(onClick = onBack) {
                 Text("Back")
             }
         }
     }
 
-
-
-    // The Pop-up Confirmation Dialog
+    // The Repick Confirmation Dialog
     if (showRepickDialog) {
         AlertDialog(
-            onDismissRequest = { showRepickDialog = false }, // Closes if user taps outside
+            onDismissRequest = { showRepickDialog = false },
             title = { Text("Repick Your Pet") },
             text = { Text("Are you sure you want to go back and switch pets?") },
             confirmButton = {
@@ -92,6 +104,32 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(
                     onClick = { showRepickDialog = false }
+                ) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    // The Log Out Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Log Out") },
+            text = { Text("Are you sure you want to log out?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout() // Triggers navigation and clears state
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLogoutDialog = false }
                 ) {
                     Text("No")
                 }
