@@ -4,10 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.cpsc411_project.ui.navigation.Routes
+import com.example.cpsc411_project.ui.screens.AuthScreen
 import com.example.cpsc411_project.ui.screens.GameScreen
 import com.example.cpsc411_project.ui.screens.LoadingScreen
 import com.example.cpsc411_project.ui.screens.SettingsScreen
+
+object Routes {
+    const val AUTH = "auth"         // <--- New Route
+    const val LOADING = "loading"
+    const val GAME = "game"
+    const val SETTINGS = "settings"
+}
 
 @Composable
 fun Cpsc411App() {
@@ -15,8 +22,21 @@ fun Cpsc411App() {
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOADING
+        startDestination = Routes.AUTH // <--- Changed to start at AUTH
     ) {
+        // 1. Login / Sign up Screen
+        composable(Routes.AUTH) {
+            AuthScreen(
+                onAuthSuccess = {
+                    navController.navigate(Routes.LOADING) {
+                        // Remove Auth from the backstack so they can't press "Back" to return
+                        popUpTo(Routes.AUTH) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // 2. Pet Picker Screen
         composable(Routes.LOADING) {
             LoadingScreen(
                 onContinue = {
@@ -27,20 +47,19 @@ fun Cpsc411App() {
             )
         }
 
+        // 3. Game Screen
         composable(Routes.GAME) {
             GameScreen(
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) }
             )
         }
 
+        // 4. Settings Screen
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onRepickPet = {
-                    // This handles the "Yes" button in the dialog
                     navController.navigate(Routes.LOADING) {
-                        // Clears the entire back stack so the user can't press
-                        // the Android back button to return to the game.
                         popUpTo(0) { inclusive = true }
                     }
                 }
