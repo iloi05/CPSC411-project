@@ -262,7 +262,8 @@ private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim
 private val DOG_SPRITES = PetSprites(
     sheetRes = R.drawable.australian_shepherd,
     idle = Anim(row = 22, frames = 3),
-    happy = Anim(row = 12, frames = 4)
+    happy = Anim(row = 12, frames = 4),
+    cleaning = Anim(row = 18, frames = 5)
 )
 // Cat animations
 private val CAT_SPRITES = PetSprites(
