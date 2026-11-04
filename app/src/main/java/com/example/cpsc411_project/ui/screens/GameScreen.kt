@@ -32,6 +32,8 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.unit.IntSize
 import android.annotation.SuppressLint
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.ui.platform.LocalDensity // movement limit
+import androidx.compose.ui.unit.Dp
 
 
 // Buttons and information for sprite go here
@@ -93,6 +95,15 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             sheetRes = R.drawable.interiorfree,
             modifier = Modifier.fillMaxSize()
         )
+        PetDisplay(
+            petType = petType,
+            happiness = happiness,
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding(),
+            topInset = 100.dp,
+            bottomInset = 190.dp
+        )
 
         // 2. The existing UI Column (now layered on top of the background)
         Column(
@@ -139,12 +150,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
             }
 
+            Spacer(modifier = Modifier.weight(1f))
 
-            PetDisplay(
-                petType = petType,
-                happiness = happiness,
-                modifier = Modifier.weight(1f)
-            )
             Column(
                 modifier = Modifier.offset(y = (-60).dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -231,7 +238,9 @@ private val CAT_SPRITES = PetSprites(
 fun PetDisplay(
     petType: String,
     happiness: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    topInset: Dp = 0.dp,
+    bottomInset: Dp = 0.dp
 ) {
     // Making the sprite pulse on screen (will pulse faster when happiness meter is high)
     val breathDuration = (1500 - (happiness * 10)).coerceAtLeast(500)
@@ -254,15 +263,24 @@ fun PetDisplay(
     // picking the sprite
     val sprites = if (petType == "cat") CAT_SPRITES else DOG_SPRITES
     val anim = if (happiness == 100) sprites.happy else sprites.idle
+
+    val density = LocalDensity.current
+    val petSizePx = with(density) { 256.dp.toPx() }
     // centers sprite, lets user drag sprite wherever
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
+            .pointerInput(petSizePx, topInset, bottomInset) {
+                val extraX = 60.dp.toPx()
+                val extraY = 40.dp.toPx()
+                val limitX = ((size.width - petSizePx) / 2f).coerceAtLeast(0f) + extraX
+                val limitY = ((size.height - petSizePx) / 2f).coerceAtLeast(0f) + extraY
+                val minY = -limitY + topInset.toPx()
+                val maxY = (limitY - bottomInset.toPx()).coerceAtLeast(minY)
+
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    offsetX += dragAmount.x
-                    offsetY += dragAmount.y
+                    offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
+                    offsetY = (offsetY + dragAmount.y) .coerceIn(minY, maxY)
                 }
             },
         contentAlignment = Alignment.Center
