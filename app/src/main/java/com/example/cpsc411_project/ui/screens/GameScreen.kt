@@ -263,7 +263,8 @@ private val DOG_SPRITES = PetSprites(
     sheetRes = R.drawable.australian_shepherd,
     idle = Anim(row = 22, frames = 3),
     happy = Anim(row = 12, frames = 4),
-    cleaning = Anim(row = 18, frames = 5)
+    cleaning = Anim(row = 18, frames = 5),
+    eating = Anim(row = 28, frames = 6)
 )
 // Cat animations
 private val CAT_SPRITES = PetSprites(
@@ -319,6 +320,10 @@ fun PetDisplay(
     val density = LocalDensity.current
     val petSizePx = with(density) { 256.dp.toPx() }
     val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
+
+    val bowlX = if (petType == "cat") (-50).dp else 0.dp
+    val bowlY = if (petType == "cat") 75.dp else 80.dp
+
     // centers sprite, lets user drag sprite wherever
     Box(
         modifier = modifier
@@ -363,8 +368,8 @@ fun PetDisplay(
                 modifier = Modifier
                     .size(96.dp)
                     .graphicsLayer {
-                        translationX = offsetX - 50.dp.toPx()
-                        translationY = offsetY + 75.dp.toPx()
+                        translationX = offsetX + bowlX.toPx()
+                        translationY = offsetY + bowlY.toPx()
                     }
             )
         }
