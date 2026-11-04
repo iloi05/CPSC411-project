@@ -278,7 +278,6 @@ private val CAT_SPRITES = PetSprites(
     cleaning = Anim(row = 12, frames = 8)
 )
 
-
 @Composable
 // Displays sprite on screen
 fun PetDisplay(
@@ -305,7 +304,6 @@ fun PetDisplay(
     )
 
     // For moving the sprite around on screen (remembering where they are left)
-
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
@@ -320,47 +318,61 @@ fun PetDisplay(
     }
 
     val density = LocalDensity.current
-    val petSizePx = with(density) { 256.dp.toPx() }
     val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
 
     val bowlX = if (petType == "cat") (-50).dp else 0.dp
     val bowlY = if (petType == "cat") 75.dp else 80.dp
 
-    // centers sprite, lets user drag sprite wherever
-    Box(
-        modifier = modifier
-            .pointerInput(petSizePx, topInset, bottomInset) {
-                val extraX = 60.dp.toPx()
-                val extraY = 40.dp.toPx()
-                val limitX = ((size.width - petSizePx) / 2f).coerceAtLeast(0f) + extraX
-                val limitY = ((size.height - petSizePx) / 2f).coerceAtLeast(0f) + extraY
-                val minY = -limitY + topInset.toPx()
-                val maxY = (limitY - bottomInset.toPx()).coerceAtLeast(minY)
-
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
-                    offsetY = (offsetY + dragAmount.y) .coerceIn(minY, maxY)
-                }
-            },
+    // BoxWithConstraints allows us to know the screen size to calculate dragging limits
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
+        val limitX: Float
+        val minY: Float
+        val maxY: Float
+        with(density) {
+            val containerWidthPx = maxWidth.toPx()
+            val containerHeightPx = maxHeight.toPx()
+            val petSizePx = catSize.toPx()
 
-        SpriteAnimation(
-            sheetRes = anim.sheetRes ?: sprites.sheetRes,
-            row = anim.row,
-            frameCount = anim.frames,
-            startCol = anim.startCol,
-            frameSize = anim.frameSize,
+            val extraX = 60.dp.toPx()
+            val extraY = 40.dp.toPx()
+            limitX = ((containerWidthPx - petSizePx) / 2f).coerceAtLeast(0f) + extraX
+            val limitY = ((containerHeightPx - petSizePx) / 2f).coerceAtLeast(0f) + extraY
+            minY = -limitY + topInset.toPx()
+            maxY = (limitY - bottomInset.toPx()).coerceAtLeast(minY)
+        }
+
+        // FIX: Wrapped the sprite in a Box that matches its exact size,
+        // so you can only drag when clicking directly on the pet!
+        Box(
             modifier = Modifier
                 .size(catSize)
+                .pointerInput(catSize, topInset, bottomInset) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
+                        offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                    }
+                }
                 .graphicsLayer {
                     translationX = offsetX
                     translationY = offsetY
                     scaleX = scale
                     scaleY = scale
                 }
-        )
+        ) {
+            SpriteAnimation(
+                sheetRes = anim.sheetRes ?: sprites.sheetRes,
+                row = anim.row,
+                frameCount = anim.frames,
+                startCol = anim.startCol,
+                frameSize = anim.frameSize,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
         if (isEating) {
             SpriteAnimation(
                 sheetRes = R.drawable.catitems,
@@ -370,8 +382,8 @@ fun PetDisplay(
                 modifier = Modifier
                     .size(96.dp)
                     .graphicsLayer {
-                        translationX = offsetX + bowlX.toPx()
-                        translationY = offsetY + bowlY.toPx()
+                        translationX = offsetX + with(density) { bowlX.toPx() }
+                        translationY = offsetY + with(density) { bowlY.toPx() }
                     }
             )
         }
@@ -413,6 +425,7 @@ fun SpriteAnimation(
         )
     }
 }
+
 @SuppressLint("LocalContextResourcesRead")
 @Composable
 fun TiledBackground(
