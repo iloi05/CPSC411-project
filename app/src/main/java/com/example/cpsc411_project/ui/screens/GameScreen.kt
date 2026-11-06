@@ -75,10 +75,10 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     var happiness by remember { mutableIntStateOf(prefs.getInt(happinessKey, 50)) }
     var hunger by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
     var clean by remember { mutableIntStateOf(prefs.getInt(cleanKey, 50))}
-
+    // for eating animation, looks to see if sprite is in eating state or not
     var feedCount by remember { mutableIntStateOf(0) }
     var isEating by remember { mutableStateOf(false) }
-
+    // switches to eating state for 2 seconds
     LaunchedEffect(feedCount) {
         if (feedCount > 0) {
             isEating = true
@@ -86,7 +86,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             isEating = false
         }
     }
-
+    // switches to playing state for 2 seconds
     var playCount by remember { mutableIntStateOf(0) }
     var isPlaying by remember { mutableStateOf(false) }
 
@@ -97,7 +97,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             isPlaying = false
         }
     }
-
+    // // switches to cleaning state for 2 seconds
     var cleanCount by remember { mutableIntStateOf(0) }
     var isCleaning by remember { mutableStateOf(false) }
 
@@ -129,6 +129,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
         PetDisplay(
+            // hoisting states
             petType = petType,
             happiness = happiness,
             isEating = isEating,
@@ -214,7 +215,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     Button(
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
-                            playCount++
+                            playCount++ // will play animation of cat in box if user picked cat
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
@@ -309,6 +310,7 @@ fun PetDisplay(
 
     // picking the sprite
     val sprites = if (petType == "cat") CAT_SPRITES else DOG_SPRITES
+    // will pick animation based on sprite current state
     val anim = when {
         isEating && sprites.eating != null -> sprites.eating
         isPlaying && sprites.playing != null -> sprites.playing
@@ -318,6 +320,7 @@ fun PetDisplay(
     }
 
     val density = LocalDensity.current
+    // adjusts cat sprite size accordingly so cat sprite size will state consistent no matter what state it's in
     val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
 
     val bowlX = if (petType == "cat") (-50).dp else 0.dp
@@ -407,6 +410,7 @@ fun SpriteAnimation(
         val opts = BitmapFactory.Options().apply { inScaled = false }
         BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
     }
+    // goes through frames of state animations (if eating, will show sprite eating, etc)
     var frame by remember(sheetRes, row, frameCount, startCol) { mutableIntStateOf(0) }
     LaunchedEffect(sheetRes, row, frameCount, startCol, fps) {
         while (true) {
