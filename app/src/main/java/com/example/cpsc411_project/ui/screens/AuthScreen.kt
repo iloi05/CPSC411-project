@@ -13,6 +13,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import com.example.cpsc411_project.SoundManager
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun AuthScreen(onAuthSuccess: () -> Unit) {
@@ -23,6 +25,10 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var isLoginMode by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        SoundManager.pauseMusic()
+    }
 
     Column(
         modifier = Modifier

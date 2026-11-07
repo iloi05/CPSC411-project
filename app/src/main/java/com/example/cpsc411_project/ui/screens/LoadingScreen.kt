@@ -35,6 +35,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.example.cpsc411_project.R
+import com.example.cpsc411_project.SoundManager
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun LoadingScreen(onContinue: () -> Unit) {
@@ -46,6 +48,9 @@ fun LoadingScreen(onContinue: () -> Unit) {
             putString("pet_type", type)
         }
         onContinue()
+    }
+    LaunchedEffect(Unit) {
+        SoundManager.pauseMusic()
     }
 
     Box(

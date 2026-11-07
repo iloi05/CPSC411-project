@@ -1,5 +1,7 @@
 package com.example.cpsc411_project.ui.screens
 
+import com.example.cpsc411_project.SoundManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -33,9 +36,14 @@ fun SettingsScreen(
     onRepickPet: () -> Unit,
     onLogout: () -> Unit // <--- Added logout callback
 ) {
+    val context = LocalContext.current
     // State to control whether the confirmation pop-ups are visible
     var showRepickDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        SoundManager.startMusic(context)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -111,7 +119,7 @@ fun SettingsScreen(
         )
     }
 
-    // The Log Out Confirmation Dialog
+    // The Log-Out Confirmation Dialog
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
