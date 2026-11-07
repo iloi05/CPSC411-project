@@ -35,6 +35,7 @@ import androidx.compose.foundation.clickable
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.platform.LocalDensity // movement limit
 import androidx.compose.ui.unit.Dp
+import android.media.MediaPlayer
 
 // Buttons and information for sprite go here
 private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
@@ -45,6 +46,16 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
     val petType = remember { prefs.getString("pet_type", "dog") ?: "dog" }
+
+    DisposableEffect(Unit) {
+        val player = MediaPlayer.create(context, R.raw.beach)
+        player?.apply {
+            isLooping = true
+            setVolume(0.8f, 0.8f)
+            start()
+        }
+        onDispose { player.release() }
+    }
     // happiness and update keys depend on pet type
     val happinessKey = "happiness_$petType"
     val happinessTimeKey = "happinessUpdate_$petType"
