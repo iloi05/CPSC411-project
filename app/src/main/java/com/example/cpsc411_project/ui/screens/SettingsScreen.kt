@@ -1,5 +1,6 @@
 package com.example.cpsc411_project.ui.screens
 
+import android.graphics.BitmapFactory
 import com.example.cpsc411_project.SoundManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
@@ -29,9 +30,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import com.example.cpsc411_project.R
-import androidx.compose.material3.Slider
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import  androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalResources
 
 @Composable
 fun SettingsScreen(
@@ -76,15 +90,16 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.headlineSmall
             )
 
-            Text("Music Volume", color = Color.White)
-            Slider(
-                value = volume,
-                onValueChange = {
+            Text( text = "Volume", color = Color.White, fontSize = 20.sp)
+            VolumeBar(
+                sheetRes = R.drawable.settings,
+                volume = volume,
+                onVolumeChange = {
                     volume = it
                     SoundManager.setVolume(context, it)
                 },
-                valueRange = 0f..1f,
-                modifier = Modifier.fillMaxWidth(0.6f)
+                modifier = Modifier.width(200.dp).height(60.dp),
+                emptyX = 2, fullX = 50, srcY = 195, srcW = 44, srcH = 12
             )
 
             // New Button to trigger the dialog
@@ -158,5 +173,60 @@ fun SettingsScreen(
                 }
             }
         )
+    }
+}
+@Composable
+fun VolumeBar(
+    sheetRes: Int,
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    emptyX: Int,
+    fullX: Int,
+    srcY: Int,
+    srcW: Int,
+    srcH: Int,
+    segments: Int = 10
+) {
+    val resources = LocalResources.current
+    val sheet = remember(sheetRes, resources) {
+        val opts = BitmapFactory.Options().apply { inScaled = false }
+        BitmapFactory.decodeResource(resources, sheetRes, opts).asImageBitmap()
+    }
+    val currentOnChange by rememberUpdatedState(onVolumeChange)
+    fun snap(x: Float, width: Float): Float =
+        (((x / width) * segments).roundToInt() / segments.toFloat()).coerceIn(0f, 1f)
+
+    Canvas(
+        modifier
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    currentOnChange(snap(offset.x, size.width.toFloat()))
+                }
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { change, _ ->
+                    change.consume()
+                    currentOnChange(snap(change.position.x, size.width.toFloat()))
+                }
+            }
+    ){
+        val filled = (volume * segments).roundToInt()
+        val segSrcW = srcW / segments
+        val segDstW = size.width /segments
+
+        for (i in 0 until segments) {
+            val startX = (if (i < filled) fullX else emptyX) + i * segSrcW
+            val dstLeft = (i * segDstW).roundToInt()
+            val dstRight = ((i + 1) * segDstW).roundToInt()
+            drawImage(
+                image = sheet,
+                srcOffset = IntOffset(startX, srcY),
+                srcSize = IntSize(segSrcW, srcH),
+                dstOffset = IntOffset(dstLeft, 0),
+                dstSize = IntSize(dstRight - dstLeft, size.height.roundToInt()),
+                filterQuality = FilterQuality.None
+            )
+        }
     }
 }
