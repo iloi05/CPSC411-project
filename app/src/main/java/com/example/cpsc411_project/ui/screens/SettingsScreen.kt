@@ -99,7 +99,8 @@ fun SettingsScreen(
                     SoundManager.setVolume(context, it)
                 },
                 modifier = Modifier.width(200.dp).height(60.dp),
-                emptyX = 2, fullX = 50, srcY = 195, srcW = 44, srcH = 12
+                emptyX = 2, fullX = 50, srcY = 195, srcW = 44, srcH = 12,
+                thumbX = 2, thumbY = 214, thumbW = 16, thumbH = 22
             )
 
             // New Button to trigger the dialog
@@ -186,6 +187,10 @@ fun VolumeBar(
     srcY: Int,
     srcW: Int,
     srcH: Int,
+    thumbX: Int,
+    thumbY: Int,
+    thumbW: Int,
+    thumbH: Int,
     segments: Int = 10
 ) {
     val resources = LocalResources.current
@@ -215,6 +220,9 @@ fun VolumeBar(
         val segSrcW = srcW / segments
         val segDstW = size.width /segments
 
+        val barH = size.height * 0.5f
+        val barTop = ((size.height - barH) / 2f).roundToInt()
+
         for (i in 0 until segments) {
             val startX = (if (i < filled) fullX else emptyX) + i * segSrcW
             val dstLeft = (i * segDstW).roundToInt()
@@ -223,10 +231,23 @@ fun VolumeBar(
                 image = sheet,
                 srcOffset = IntOffset(startX, srcY),
                 srcSize = IntSize(segSrcW, srcH),
-                dstOffset = IntOffset(dstLeft, 0),
-                dstSize = IntSize(dstRight - dstLeft, size.height.roundToInt()),
+                dstOffset = IntOffset(dstLeft, barTop),
+                dstSize = IntSize(dstRight - dstLeft, barH.roundToInt()),
                 filterQuality = FilterQuality.None
             )
         }
+        val thumbDstH = size.height
+        val thumbDstW = thumbDstH * thumbW / thumbH
+        val thumbLeft = (volume * size.width - thumbDstW / 2f)
+            .coerceIn(0f, size.width - thumbDstW)
+
+        drawImage(
+            image = sheet,
+            srcOffset = IntOffset(thumbX, thumbY),
+            srcSize = IntSize(thumbW, thumbH),
+            dstOffset = IntOffset(thumbLeft.roundToInt(), 0),
+            dstSize = IntSize(thumbDstW.roundToInt(), thumbDstH.roundToInt()),
+            filterQuality = FilterQuality.None
+        )
     }
 }
