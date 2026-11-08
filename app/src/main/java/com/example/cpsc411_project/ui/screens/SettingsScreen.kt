@@ -29,6 +29,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import com.example.cpsc411_project.R
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun SettingsScreen(
@@ -40,6 +43,7 @@ fun SettingsScreen(
     // State to control whether the confirmation pop-ups are visible
     var showRepickDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var volume by remember { mutableFloatStateOf(SoundManager.getVolume()) }
 
     LaunchedEffect(Unit) {
         SoundManager.startMusic(context)
@@ -70,6 +74,17 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.headlineSmall
+            )
+
+            Text("Music Volume", color = Color.White)
+            Slider(
+                value = volume,
+                onValueChange = {
+                    volume = it
+                    SoundManager.setVolume(context, it)
+                },
+                valueRange = 0f..1f,
+                modifier = Modifier.fillMaxWidth(0.6f)
             )
 
             // New Button to trigger the dialog
