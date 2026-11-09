@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+// Read the API key from local.properties
+val properties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    properties.load(localPropertiesFile.inputStream())
+}
+val geminiApiKey = properties.getProperty("GEMINI_API_KEY") ?: ""
 
 android {
     namespace = "com.example.cpsc411_project"
@@ -17,6 +27,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // This injects your API key into the app safely
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -32,10 +45,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // <--- MUST BE ADDED for BuildConfig.GEMINI_API_KEY to work
     }
 }
 
 dependencies {
+    // Google Generative AI SDK for Android
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("com.airbnb.android:lottie-compose:6.4.0")
