@@ -1,0 +1,245 @@
+package com.example.cpsc411_project.ui.components
+
+import android.annotation.SuppressLint
+import android.graphics.BitmapFactory
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import com.example.cpsc411_project.R
+import kotlin.math.roundToInt
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+
+// Sprites go here
+// defining the numbers needed for a sprite animation
+private data class Anim(val row: Int, val frames: Int, val startCol: Int = 0, val sheetRes: Int? = null, val frameSize: Int = 64)
+// Defining everything needed to draw one sprite
+private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null, val playing: Anim? = null, val cleaning: Anim? = null)
+// The png files for the animations are an array, start counting from 0 to find animation you want
+// Dog animations
+private val DOG_SPRITES = PetSprites(
+    sheetRes = R.drawable.australian_shepherd,
+    idle = Anim(row = 22, frames = 3),
+    happy = Anim(row = 12, frames = 4),
+    cleaning = Anim(row = 18, frames = 5),
+    eating = Anim(row = 28, frames = 6)
+)
+// Cat animations
+private val CAT_SPRITES = PetSprites(
+    sheetRes = R.drawable.cat_3,
+    idle = Anim(row = 19, frames = 5),
+    happy = Anim(row = 15, frames = 3),
+    eating = Anim(row = 0, frames = 8, sheetRes = R.drawable.cateating),
+    playing = Anim(row = 0, frames = 4, sheetRes = R.drawable.box, frameSize = 32),
+    cleaning = Anim(row = 12, frames = 8)
+)
+
+@Composable
+// Displays sprite on screen
+fun PetDisplay(
+    petType: String,
+    happiness: Int,
+    modifier: Modifier = Modifier,
+    isEating: Boolean = false,
+    isPlaying: Boolean = false,
+    isCleaning: Boolean = false,
+    topInset: Dp = 0.dp,
+    bottomInset: Dp = 0.dp
+) {
+    // Making the sprite pulse on screen (will pulse faster when happiness meter is high)
+    val breathDuration = (1500 - (happiness * 10)).coerceAtLeast(500)
+    val infiniteTransition = rememberInfiniteTransition(label = "pet_idle")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(breathDuration, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+
+    // For moving the sprite around on screen (remembering where they are left)
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+
+    // picking the sprite
+    val sprites = if (petType == "cat") CAT_SPRITES else DOG_SPRITES
+    // will pick animation based on sprite current state
+    val anim = when {
+        isEating && sprites.eating != null -> sprites.eating
+        isPlaying && sprites.playing != null -> sprites.playing
+        isCleaning && sprites.cleaning != null -> sprites.cleaning
+        happiness == 100 -> sprites.happy
+        else -> sprites.idle
+    }
+
+    val density = LocalDensity.current
+    // adjusts cat sprite size accordingly so cat sprite size will state consistent no matter what state it's in
+    val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
+
+    val bowlX = if (petType == "cat") (-50).dp else 0.dp
+    val bowlY = if (petType == "cat") 75.dp else 80.dp
+
+    // BoxWithConstraints allows us to know the screen size to calculate dragging limits
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val limitX: Float
+        val minY: Float
+        val maxY: Float
+        with(density) {
+            val containerWidthPx = maxWidth.toPx()
+            val containerHeightPx = maxHeight.toPx()
+            val petSizePx = catSize.toPx()
+
+            val extraX = 60.dp.toPx()
+            val extraY = 40.dp.toPx()
+            limitX = ((containerWidthPx - petSizePx) / 2f).coerceAtLeast(0f) + extraX
+            val limitY = ((containerHeightPx - petSizePx) / 2f).coerceAtLeast(0f) + extraY
+            minY = -limitY + topInset.toPx()
+            maxY = (limitY - bottomInset.toPx()).coerceAtLeast(minY)
+        }
+
+        // FIX: Wrapped the sprite in a Box that matches its exact size,
+        // so you can only drag when clicking directly on the pet!
+        Box(
+            modifier = Modifier
+                .size(catSize)
+                .pointerInput(catSize, topInset, bottomInset) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
+                        offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                    }
+                }
+                .graphicsLayer {
+                    translationX = offsetX
+                    translationY = offsetY
+                    scaleX = scale
+                    scaleY = scale
+                }
+        ) {
+            SpriteAnimation(
+                sheetRes = anim.sheetRes ?: sprites.sheetRes,
+                row = anim.row,
+                frameCount = anim.frames,
+                startCol = anim.startCol,
+                frameSize = anim.frameSize,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (isEating) {
+            SpriteAnimation(
+                sheetRes = R.drawable.catitems,
+                row = 3,
+                frameCount = 1,
+                startCol = 2,
+                modifier = Modifier
+                    .size(96.dp)
+                    .graphicsLayer {
+                        translationX = offsetX + with(density) { bowlX.toPx() }
+                        translationY = offsetY + with(density) { bowlY.toPx() }
+                    }
+            )
+        }
+    }
+}
+
+// calling SpriteAnimation to draw chosen animation sequence
+// Also moves pet, and pet moves smoothly, no recomposing entire layout every frame
+@SuppressLint("LocalContextResourcesRead")
+@Composable
+fun SpriteAnimation(
+    sheetRes: Int,
+    row: Int,
+    frameCount: Int,
+    modifier: Modifier = Modifier,
+    startCol: Int = 0,
+    frameSize: Int = 64,
+    fps: Int = 8
+) {
+    val context = LocalContext.current
+    val sheet = remember(sheetRes) {
+        val opts = BitmapFactory.Options().apply { inScaled = false }
+        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
+    }
+    // goes through frames of state animations (if eating, will show sprite eating, etc.)
+    var frame by remember(sheetRes, row, frameCount, startCol) { mutableIntStateOf(0) }
+    LaunchedEffect(sheetRes, row, frameCount, startCol, fps) {
+        while (true) {
+            delay((1000 / fps).milliseconds)
+            frame = (frame + 1) % frameCount
+        }
+    }
+    // For the animations, Compose redraws canvas, grabs next frame and stretches it to fill the square
+    Canvas(modifier) {
+        drawImage(
+            image = sheet,
+            srcOffset = IntOffset((startCol + frame) * frameSize, row * frameSize),
+            srcSize = IntSize(frameSize, frameSize),
+            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+            filterQuality = FilterQuality.None
+        )
+    }
+}
+
+@SuppressLint("LocalContextResourcesRead")
+@Composable
+fun TiledBackground(
+    sheetRes: Int,
+    modifier: Modifier = Modifier,
+    tileSize: Int = 16,
+    scale: Int = 6,
+    floorCol: Int = 7,
+    floorRow: Int = 3,
+    wallCol: Int = 8,
+    wallRow: Int = 0,
+    wallRows: Int = 3
+) {
+    val context = LocalContext.current
+    val sheet = remember(sheetRes) {
+        val opts = BitmapFactory.Options().apply { inScaled = false }
+        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
+    }
+    Canvas(modifier) {
+        val dst = tileSize * scale
+        val cols = (size.width / dst).toInt() + 1
+        val rows = (size.height / dst).toInt() + 1
+        for (r in 0 until rows) {
+            for (c in 0 until cols) {
+                val isWall = r < wallRows
+                drawImage(
+                    image = sheet,
+                    srcOffset = IntOffset(
+                        (if (isWall) wallCol else floorCol) * tileSize,
+                        (if (isWall) wallRow else floorRow) * tileSize
+                    ),
+                    srcSize = IntSize(tileSize, tileSize),
+                    dstOffset = IntOffset(c * dst, r * dst),
+                    dstSize = IntSize(dst, dst),
+                    filterQuality = FilterQuality.None
+                )
+            }
+        }
+    }
+}

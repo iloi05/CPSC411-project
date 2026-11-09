@@ -2,40 +2,39 @@ package com.example.cpsc411_project.ui.screens
 
 import com.example.cpsc411_project.SoundManager
 import android.content.Context
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cpsc411_project.R
+import com.example.cpsc411_project.ui.chat.PetChatViewModel
+import com.example.cpsc411_project.ui.components.ChatDialog
+import com.example.cpsc411_project.ui.components.PetDisplay
+import com.example.cpsc411_project.ui.components.SpriteAnimation
+import com.example.cpsc411_project.ui.components.TiledBackground
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
-import androidx.compose.ui.unit.IntSize
-import android.annotation.SuppressLint
-import androidx.compose.foundation.clickable
-import kotlin.time.Duration.Companion.milliseconds
-import androidx.compose.ui.platform.LocalDensity // movement limit
-import androidx.compose.ui.unit.Dp
+import kotlin.time.Duration.Companion.seconds
 
 // Buttons and information for sprite go here
 private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
@@ -46,6 +45,26 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
     val petType = remember { prefs.getString("pet_type", "dog") ?: "dog" }
+
+    // State for the Chat Popup
+    var showChatDialog by remember { mutableStateOf(false) }
+    val chatViewModel: PetChatViewModel = viewModel()
+
+    // --- NEW: Observe the pet's AI reaction ---
+    val petReaction by chatViewModel.petReaction.collectAsState()
+
+    // State for draggable speech bubble
+    var bubbleOffset by remember { mutableStateOf(Offset.Zero) }
+    val density = LocalDensity.current
+    val initialBubbleY = with(density) { 120.dp.toPx() } // Places it just below the stats bar
+
+    // Automatically clear the reaction after 5 seconds
+    LaunchedEffect(petReaction) {
+        if (petReaction != null) {
+            delay(5000)
+            chatViewModel.clearReaction()
+        }
+    }
 
     LaunchedEffect(Unit) {
         SoundManager.startMusic(context)
@@ -211,6 +230,16 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // CHANGED: Now just sets a boolean to true instead of navigating
+                Button(
+                    onClick = { showChatDialog = true },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    )
+                ) {
+                    Text("Chat with your Pet!", fontSize = 18.sp)
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -221,6 +250,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
                             playCount++ // will play animation of cat in box if user picked cat
+                            chatViewModel.reactToAction("Play", petType, happiness, hunger, clean)
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
@@ -230,6 +260,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     Button(
                         onClick = {
                             happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
+                            chatViewModel.reactToAction("Pet", petType, happiness, hunger, clean)
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
@@ -240,6 +271,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         onClick = {
                             hunger = changeStat(hungerKey, hungerTimeKey, 100, 20)
                             feedCount++
+                            chatViewModel.reactToAction("Feed", petType, happiness, hunger, clean)
                         },
                         modifier = Modifier.weight(1f).height(50.dp)
                     ) {
@@ -249,6 +281,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         onClick = {
                             clean = changeStat(cleanKey, cleanTimeKey, 100, 20)
                             cleanCount++
+                            chatViewModel.reactToAction("Clean", petType, happiness, hunger, clean)
                         },
                         modifier = Modifier.weight(1f).height(50.dp)
                     ) {
@@ -257,221 +290,51 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 }
             }
         }
-    }
-}
 
-// Sprites go here
-// defining the numbers needed for a sprite animation
-private data class Anim(val row: Int, val frames: Int, val startCol: Int = 0, val sheetRes: Int? = null, val frameSize: Int = 64)
-// Defining everything needed to draw one sprite
-private data class PetSprites(val sheetRes: Int, val idle: Anim, val happy: Anim, val eating: Anim? = null, val playing: Anim? = null, val cleaning: Anim? = null)
-// The png files for the animations are an array, start counting from 0 to find animation you want
-// Dog animations
-private val DOG_SPRITES = PetSprites(
-    sheetRes = R.drawable.australian_shepherd,
-    idle = Anim(row = 22, frames = 3),
-    happy = Anim(row = 12, frames = 4),
-    cleaning = Anim(row = 18, frames = 5),
-    eating = Anim(row = 28, frames = 6)
-)
-// Cat animations
-private val CAT_SPRITES = PetSprites(
-    sheetRes = R.drawable.cat_3,
-    idle = Anim(row = 19, frames = 5),
-    happy = Anim(row = 15, frames = 3),
-    eating = Anim(row = 0, frames = 8, sheetRes = R.drawable.cateating),
-    playing = Anim(row = 0, frames = 4, sheetRes = R.drawable.box, frameSize = 32),
-    cleaning = Anim(row = 12, frames = 8)
-)
-
-@Composable
-// Displays sprite on screen
-fun PetDisplay(
-    petType: String,
-    happiness: Int,
-    modifier: Modifier = Modifier,
-    isEating: Boolean = false,
-    isPlaying: Boolean = false,
-    isCleaning: Boolean = false,
-    topInset: Dp = 0.dp,
-    bottomInset: Dp = 0.dp
-) {
-    // Making the sprite pulse on screen (will pulse faster when happiness meter is high)
-    val breathDuration = (1500 - (happiness * 10)).coerceAtLeast(500)
-    val infiniteTransition = rememberInfiniteTransition(label = "pet_idle")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(breathDuration, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
-    )
-
-    // For moving the sprite around on screen (remembering where they are left)
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
-
-    // picking the sprite
-    val sprites = if (petType == "cat") CAT_SPRITES else DOG_SPRITES
-    // will pick animation based on sprite current state
-    val anim = when {
-        isEating && sprites.eating != null -> sprites.eating
-        isPlaying && sprites.playing != null -> sprites.playing
-        isCleaning && sprites.cleaning != null -> sprites.cleaning
-        happiness == 100 -> sprites.happy
-        else -> sprites.idle
-    }
-
-    val density = LocalDensity.current
-    // adjusts cat sprite size accordingly so cat sprite size will state consistent no matter what state it's in
-    val catSize by animateDpAsState(if (isPlaying && sprites.playing != null) 128.dp else 256.dp, label = "catSize")
-
-    val bowlX = if (petType == "cat") (-50).dp else 0.dp
-    val bowlY = if (petType == "cat") 75.dp else 80.dp
-
-    // BoxWithConstraints allows us to know the screen size to calculate dragging limits
-    BoxWithConstraints(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        val limitX: Float
-        val minY: Float
-        val maxY: Float
-        with(density) {
-            val containerWidthPx = maxWidth.toPx()
-            val containerHeightPx = maxHeight.toPx()
-            val petSizePx = catSize.toPx()
-
-            val extraX = 60.dp.toPx()
-            val extraY = 40.dp.toPx()
-            limitX = ((containerWidthPx - petSizePx) / 2f).coerceAtLeast(0f) + extraX
-            val limitY = ((containerHeightPx - petSizePx) / 2f).coerceAtLeast(0f) + extraY
-            minY = -limitY + topInset.toPx()
-            maxY = (limitY - bottomInset.toPx()).coerceAtLeast(minY)
-        }
-
-        // FIX: Wrapped the sprite in a Box that matches its exact size,
-        // so you can only drag when clicking directly on the pet!
-        Box(
+        // --- NEW: Draggable AI Speech Bubble ---
+        AnimatedVisibility(
+            visible = petReaction != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
             modifier = Modifier
-                .size(catSize)
-                .pointerInput(catSize, topInset, bottomInset) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
-                        offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
-                    }
-                }
-                .graphicsLayer {
-                    translationX = offsetX
-                    translationY = offsetY
-                    scaleX = scale
-                    scaleY = scale
-                }
+                .align(Alignment.TopCenter)
+                // Offset placed here so it starts below the state bar, but can be dragged anywhere
+                .offset { IntOffset(bubbleOffset.x.roundToInt(), (bubbleOffset.y + initialBubbleY).roundToInt()) }
         ) {
-            SpriteAnimation(
-                sheetRes = anim.sheetRes ?: sprites.sheetRes,
-                row = anim.row,
-                frameCount = anim.frames,
-                startCol = anim.startCol,
-                frameSize = anim.frameSize,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        if (isEating) {
-            SpriteAnimation(
-                sheetRes = R.drawable.catitems,
-                row = 3,
-                frameCount = 1,
-                startCol = 2,
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
-                    .size(96.dp)
-                    .graphicsLayer {
-                        translationX = offsetX + with(density) { bowlX.toPx() }
-                        translationY = offsetY + with(density) { bowlY.toPx() }
+                    // Added pointerInput to make the bubble draggable
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            bubbleOffset += dragAmount
+                        }
                     }
-            )
-        }
-    }
-}
-// calling SpriteAnimation to draw chosen animation sequence
-// Also moves pet, and pet moves smoothly, no recomposing entire layout every frame
-@SuppressLint("LocalContextResourcesRead")
-@Composable
-fun SpriteAnimation(
-    sheetRes: Int,
-    row: Int,
-    frameCount: Int,
-    modifier: Modifier = Modifier,
-    startCol: Int = 0,
-    frameSize: Int = 64,
-    fps: Int = 8
-) {
-    val context = LocalContext.current
-    val sheet = remember(sheetRes) {
-        val opts = BitmapFactory.Options().apply { inScaled = false }
-        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
-    }
-    // goes through frames of state animations (if eating, will show sprite eating, etc.)
-    var frame by remember(sheetRes, row, frameCount, startCol) { mutableIntStateOf(0) }
-    LaunchedEffect(sheetRes, row, frameCount, startCol, fps) {
-        while (true) {
-            delay((1000 / fps).milliseconds)
-            frame = (frame + 1) % frameCount
-        }
-    }
-    // For the animations, Compose redraws canvas, grabs next frame and stretches it to fill the square
-    Canvas(modifier) {
-        drawImage(
-            image = sheet,
-            srcOffset = IntOffset((startCol + frame) * frameSize, row * frameSize),
-            srcSize = IntSize(frameSize, frameSize),
-            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
-            filterQuality = FilterQuality.None
-        )
-    }
-}
-
-@SuppressLint("LocalContextResourcesRead")
-@Composable
-fun TiledBackground(
-    sheetRes: Int,
-    modifier: Modifier = Modifier,
-    tileSize: Int = 16,
-    scale: Int = 6,
-    floorCol: Int = 7,
-    floorRow: Int = 3,
-    wallCol: Int = 8,
-    wallRow: Int = 0,
-    wallRows: Int = 3
-) {
-    val context = LocalContext.current
-    val sheet = remember(sheetRes) {
-        val opts = BitmapFactory.Options().apply { inScaled = false }
-        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
-    }
-    Canvas(modifier) {
-        val dst = tileSize * scale
-        val cols = (size.width / dst).toInt() + 1
-        val rows = (size.height / dst).toInt() + 1
-        for (r in 0 until rows) {
-            for (c in 0 until cols) {
-                val isWall = r < wallRows
-                drawImage(
-                    image = sheet,
-                    srcOffset = IntOffset(
-                        (if (isWall) wallCol else floorCol) * tileSize,
-                        (if (isWall) wallRow else floorRow) * tileSize
-                    ),
-                    srcSize = IntSize(tileSize, tileSize),
-                    dstOffset = IntOffset(c * dst, r * dst),
-                    dstSize = IntSize(dst, dst),
-                    filterQuality = FilterQuality.None
+                    .padding(horizontal = 24.dp)
+            ) {
+                Text(
+                    text = petReaction ?: "",
+                    modifier = Modifier.padding(16.dp),
+                    color = Color.Black,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center
                 )
             }
         }
+    }
+
+    // --- NEW: Chat Popup Dialog ---
+    if (showChatDialog) {
+        ChatDialog(
+            petType = petType,
+            happiness = happiness,
+            hunger = hunger,
+            clean = clean,
+            onDismiss = { showChatDialog = false },
+            viewModel = chatViewModel
+        )
     }
 }
