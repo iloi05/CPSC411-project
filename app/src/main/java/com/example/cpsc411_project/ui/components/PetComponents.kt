@@ -124,18 +124,16 @@ fun PetDisplay(
         Box(
             modifier = Modifier
                 .size(catSize)
-                .pointerInput(catSize, topInset, bottomInset) {
+                .graphicsLayer {
+                    translationX = offsetX
+                    translationY = offsetY
+                }
+                .pointerInput(catSize, topInset, bottomInset, limitX, minY, maxY) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
                         offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
                         offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
                     }
-                }
-                .graphicsLayer {
-                    translationX = offsetX
-                    translationY = offsetY
-                    scaleX = scale
-                    scaleY = scale
                 }
         ) {
             SpriteAnimation(
@@ -144,7 +142,12 @@ fun PetDisplay(
                 frameCount = anim.frames,
                 startCol = anim.startCol,
                 frameSize = anim.frameSize,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
             )
         }
 
