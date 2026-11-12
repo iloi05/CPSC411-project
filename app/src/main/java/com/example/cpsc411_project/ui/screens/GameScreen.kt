@@ -273,6 +273,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 .size(64.dp)
                                 .clickable {
                                     happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
+                                    playCount++
                                     chatViewModel.reactToAction("Play", petType, happiness, hunger, clean)
                                 }
                         )
@@ -307,6 +308,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 .size(85.dp)
                                 .clickable {
                                     hunger = changeStat(hungerKey, hungerTimeKey, 50, 5)
+                                    feedCount++
                                     chatViewModel.reactToAction("Feed", petType, happiness, hunger, clean)
                                 }
                         )
