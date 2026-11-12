@@ -1,7 +1,6 @@
 package com.example.cpsc411_project.ui.screens
 
 import com.example.cpsc411_project.SoundManager
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,7 +23,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.edit
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cpsc411_project.R
 import com.example.cpsc411_project.ui.chat.PetChatViewModel
@@ -41,20 +39,25 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.res.painterResource
 import com.example.cpsc411_project.ui.components.SpriteRegion
+import com.example.cpsc411_project.ui.pet.PetViewModel
 
 
 // Buttons and information for sprite go here
-private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L // pet and play decay every 6 mins
-private const val CLEAN_DECAY_INTERVAL_MS = 30 * 60 * 1000L // clean decays every 30 mins
-private const val HUNGER_DECAY_INTERVAL_MS = 40 * 60 * 1000L // hunger decays every 40 mins
-private const val POINTS_PER_INTERVAL = 5 // meters go up by 5
 
 @Composable
 fun GameScreen(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("pet", Context.MODE_PRIVATE) }
-    val petType = remember { prefs.getString("pet_type", "dog") ?: "dog" }
 
+    val vm: PetViewModel = viewModel()
+    val state by vm.state.collectAsState()
+
+    val petType = state.petType
+    val happiness = state.happiness
+    val hunger = state.hunger
+    val clean = state.clean
+    val isEating = state.isEating
+    val isPlaying = state.isPlaying
+    val isCleaning = state.isCleaning
     // State for the Chat Popup
     var showChatDialog by remember { mutableStateOf(false) }
     val chatViewModel: PetChatViewModel = viewModel()
@@ -78,90 +81,13 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     LaunchedEffect(Unit) {
         SoundManager.startMusic(context)
     }
-    // happiness and update keys depend on pet type
-    val happinessKey = "happiness_$petType"
-    val happinessTimeKey = "happinessUpdate_$petType"
-    val hungerKey = "hunger_$petType"
-    val hungerTimeKey = "hungerUpdate_$petType"
-    val cleanKey = "clean_$petType"
-    val cleanTimeKey = "cleanUpdate_$petType"
-    fun applyDecay(valueKey: String, timeKey: String, default: Int): Int {
-        val intervalMs = when (valueKey) {
-            cleanKey -> CLEAN_DECAY_INTERVAL_MS
-            hungerKey -> HUNGER_DECAY_INTERVAL_MS
-            else -> DECAY_INTERVAL_MS
-        }
-        val now = System.currentTimeMillis()
-        val saved = prefs.getInt(valueKey, default)
-        val last = prefs.getLong(timeKey, now)
-        val intervals = ((now - last) / intervalMs).toInt().coerceAtLeast(0)
-        val current = (saved - intervals * POINTS_PER_INTERVAL).coerceIn(0, 100)
 
-        prefs.edit {
-            putInt(valueKey, current)
-            putLong(timeKey, last + intervals * intervalMs)
-        }
-        return current
-    }
-
-    fun changeStat(valueKey: String, timeKey: String, default: Int, amount: Int): Int {
-        val newValue = (applyDecay(valueKey, timeKey, default) + amount).coerceIn(0, 100)
-        prefs.edit(commit = true) { putInt(valueKey, newValue) }
-        return newValue
-    }
-
-    var happiness by remember { mutableIntStateOf(prefs.getInt(happinessKey, 50)) }
-    var hunger by remember { mutableIntStateOf(prefs.getInt(hungerKey, 50))}
-    var clean by remember { mutableIntStateOf(prefs.getInt(cleanKey, 50))}
-    // for eating animation, looks to see if sprite is in eating state or not
-    var feedCount by remember { mutableIntStateOf(0) }
-    var isEating by remember { mutableStateOf(false) }
-    // switches to eating state for 2 seconds
-    LaunchedEffect(feedCount) {
-        if (feedCount > 0) {
-            isEating = true
-            delay(2.seconds)
-            isEating = false
-        }
-    }
-    // switches to playing state for 2 seconds
-    var playCount by remember { mutableIntStateOf(0) }
-    var isPlaying by remember { mutableStateOf(false) }
-
-    LaunchedEffect(playCount) {
-        if (playCount > 0) {
-            isPlaying = true
-            delay(2.seconds)
-            isPlaying = false
-        }
-    }
-    // // switches to cleaning state for 2 seconds
-    var cleanCount by remember { mutableIntStateOf(0) }
-    var isCleaning by remember { mutableStateOf(false) }
-
-    LaunchedEffect(cleanCount) {
-        if (cleanCount > 0) {
-            isCleaning = true
-            delay(2.seconds)
-            isCleaning = false
-        }
-    }
 
     var showSoap by remember { mutableStateOf(false) }
     var soapOffset by remember { mutableStateOf(Offset.Zero) }
     var soapCenter by remember { mutableStateOf(Offset.Zero) }
     var petBounds by remember { mutableStateOf(Rect.Zero) }
     var scrubDistance by remember { mutableFloatStateOf(0f) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            happiness = applyDecay(happinessKey, happinessTimeKey, 50)
-            hunger = applyDecay(hungerKey, hungerTimeKey, 50)
-            clean = applyDecay(cleanKey, cleanTimeKey, 50)
-            delay(10.seconds)
-
-        }
-    }
 
     // --- NEW: Outer Box for the background ---
     Box(modifier = Modifier.fillMaxSize()) {
@@ -293,9 +219,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                             modifier = Modifier
                                 .size(64.dp)
                                 .clickable {
-                                    happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
-                                    playCount++
-                                    chatViewModel.reactToAction("Play", petType, happiness, hunger, clean)
+                                    val s = vm.play()
+                                    chatViewModel.reactToAction("Play", s.petType, s.happiness, s.hunger, s.clean)
                                 }
                         )
                     }
@@ -312,8 +237,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                             modifier = Modifier
                                 .size(64.dp)
                                 .clickable {
-                                    happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
-                                    chatViewModel.reactToAction("Pet", petType, happiness, hunger, clean)
+                                   val s = vm.pet()
+                                    chatViewModel.reactToAction("Pet", s.petType, s.happiness, s.hunger, s.clean)
                                 }
                         )
                     }
@@ -330,9 +255,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                             modifier = Modifier
                                 .size(85.dp)
                                 .clickable {
-                                    hunger = changeStat(hungerKey, hungerTimeKey, 50, 5)
-                                    feedCount++
-                                    chatViewModel.reactToAction("Feed", petType, happiness, hunger, clean)
+                                    val s = vm.feed()
+                                    chatViewModel.reactToAction("Feed", s.petType, s.happiness, s.hunger, s.clean)
                                 }
                         )
                     }
@@ -377,9 +301,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 scrubDistance += dragAmount.getDistance()
                                 if (scrubDistance >= 120f) {
                                     scrubDistance = 0f
-                                    clean = changeStat(cleanKey, cleanTimeKey, 50, 2)
-                                    cleanCount++
-                                    if (clean >= 100) showSoap = false
+                                    val s = vm.scrub()
+                                    if (s.clean >= 100) showSoap = false
                                 }
                             }
                         }
