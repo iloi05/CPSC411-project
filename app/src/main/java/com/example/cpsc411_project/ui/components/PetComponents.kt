@@ -213,6 +213,32 @@ fun SpriteAnimation(
 
 @SuppressLint("LocalContextResourcesRead")
 @Composable
+fun SpriteRegion(
+    sheetRes: Int,
+    srcX: Int,
+    srcY: Int,
+    srcW: Int,
+    srcH: Int,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val sheet = remember(sheetRes) {
+        val opts = BitmapFactory.Options().apply { inScaled = false }
+        BitmapFactory.decodeResource(context.resources, sheetRes, opts).asImageBitmap()
+    }
+    Canvas(modifier) {
+        drawImage(
+            image = sheet,
+            srcOffset = IntOffset(srcX, srcY),
+            srcSize = IntSize(srcW, srcH),
+            dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+            filterQuality = FilterQuality.None
+        )
+    }
+}
+
+@SuppressLint("LocalContextResourcesRead")
+@Composable
 fun TiledBackground(
     sheetRes: Int,
     modifier: Modifier = Modifier,

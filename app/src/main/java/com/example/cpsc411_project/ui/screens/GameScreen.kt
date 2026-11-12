@@ -40,6 +40,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.res.painterResource
+import com.example.cpsc411_project.ui.components.SpriteRegion
 
 
 // Buttons and information for sprite go here
@@ -98,7 +99,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
 
         prefs.edit {
             putInt(valueKey, current)
-            putLong(timeKey, last + intervals * DECAY_INTERVAL_MS)
+            putLong(timeKey, last + intervals * intervalMs)
         }
         return current
     }
@@ -171,6 +172,17 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             sheetRes = R.drawable.interiorfree,
             modifier = Modifier.fillMaxSize()
         )
+        // cat-tree display
+        if (petType == "cat") {
+            SpriteRegion(
+                sheetRes = R.drawable.catitems,
+                srcX = 0, srcY = 256, srcW = 96, srcH = 192,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 16.dp, bottom = 600.dp)
+                    .size(width = 192.dp, height = 384.dp)
+            )
+        }
         PetDisplay(
             // hoisting states
             petType = petType,
