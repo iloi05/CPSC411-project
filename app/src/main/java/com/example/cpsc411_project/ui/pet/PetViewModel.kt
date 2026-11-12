@@ -61,7 +61,7 @@ class PetViewModel(app: Application) : AndroidViewModel(app) {
         _state.updateAndGet { it.copy(happiness = repo.change(Stat.HAPPINESS, 5)) }
 
     fun feed(): PetUiState {
-        val s = _state.updateAndGet { it.copy(clean = repo.change(Stat.HUNGER, 5)) }
+        val s = _state.updateAndGet { it.copy(hunger = repo.change(Stat.HUNGER, 5)) }
         pulse("feed") { st, on -> st.copy(isEating = on) }
         return s
     }
@@ -78,5 +78,13 @@ class PetViewModel(app: Application) : AndroidViewModel(app) {
             delay(2.seconds)
             _state.update { set(it, false) }
         }
+    }
+
+    private var scrubDistance = 0f
+    fun onScrub(distance: Float): PetUiState? {
+        scrubDistance += distance
+        if (scrubDistance < 120f) return null
+        scrubDistance = 0f
+        return scrub()
     }
 }

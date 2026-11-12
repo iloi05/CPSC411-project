@@ -87,7 +87,6 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     var soapOffset by remember { mutableStateOf(Offset.Zero) }
     var soapCenter by remember { mutableStateOf(Offset.Zero) }
     var petBounds by remember { mutableStateOf(Rect.Zero) }
-    var scrubDistance by remember { mutableFloatStateOf(0f) }
 
     // --- NEW: Outer Box for the background ---
     Box(modifier = Modifier.fillMaxSize()) {
@@ -298,12 +297,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                             soapOffset += dragAmount
                             // raises clean meter if soap is dragged over pet
                             if (petBounds.contains(soapCenter)) {
-                                scrubDistance += dragAmount.getDistance()
-                                if (scrubDistance >= 120f) {
-                                    scrubDistance = 0f
-                                    val s = vm.scrub()
-                                    if (s.clean >= 100) showSoap = false
-                                }
+                                val s = vm.onScrub(dragAmount.getDistance())
+                                if (s != null && s.clean >= 100) showSoap = false
                             }
                         }
                     }
