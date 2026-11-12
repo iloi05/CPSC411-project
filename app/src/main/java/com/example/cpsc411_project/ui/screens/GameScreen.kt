@@ -35,6 +35,12 @@ import com.example.cpsc411_project.ui.components.TiledBackground
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.res.painterResource
+
 
 // Buttons and information for sprite go here
 private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
@@ -133,6 +139,12 @@ fun GameScreen(onOpenSettings: () -> Unit) {
         }
     }
 
+    var showSoap by remember { mutableStateOf(false) }
+    var soapOffset by remember { mutableStateOf(Offset.Zero) }
+    var soapCenter by remember { mutableStateOf(Offset.Zero) }
+    var petBounds by remember { mutableStateOf(Rect.Zero) }
+    var scrubDistance by remember { mutableFloatStateOf(0f) }
+
     LaunchedEffect(Unit) {
         while (true) {
             happiness = applyDecay(happinessKey, happinessTimeKey, 50)
@@ -163,7 +175,8 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 .fillMaxSize()
                 .safeDrawingPadding(),
             topInset = 100.dp,
-            bottomInset = 190.dp
+            bottomInset = 190.dp,
+            onPetBoundsChanged = { petBounds = it }
         )
         SpriteAnimation(
             sheetRes = R.drawable.button,
@@ -310,15 +323,42 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                             modifier = Modifier
                                 .size(64.dp)
                                 .clickable {
-                                    clean = changeStat(cleanKey, cleanTimeKey, 50, 5)
-                                    chatViewModel.reactToAction("Clean", petType, happiness, hunger, clean)
+                                    showSoap = !showSoap
+                                    if (showSoap) soapOffset = Offset.Zero
                                 }
                         )
                     }
                 }
             }
-        }
 
+        }
+        if (showSoap) {
+            Image(
+                painter = painterResource(R.drawable.soap),
+                contentDescription = "Soap",
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(96.dp)
+                    .offset { IntOffset(soapOffset.x.roundToInt(), soapOffset.y.roundToInt()) }
+                    .onGloballyPositioned { soapCenter = it.boundsInRoot().center}
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            soapOffset += dragAmount
+
+                            if (petBounds.contains(soapCenter)) {
+                                scrubDistance += dragAmount.getDistance()
+                                if (scrubDistance >= 120f) {
+                                    scrubDistance = 0f
+                                    clean = changeStat(cleanKey, cleanTimeKey, 50, 2)
+                                    cleanCount++
+                                    if (clean >= 100) showSoap = false
+                                }
+                            }
+                        }
+                    }
+            )
+        }
         // --- NEW: Draggable AI Speech Bubble ---
         AnimatedVisibility(
             visible = petReaction != null,

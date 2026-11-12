@@ -26,6 +26,9 @@ import com.example.cpsc411_project.R
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 
 // Sprites go here
 // defining the numbers needed for a sprite animation
@@ -61,7 +64,8 @@ fun PetDisplay(
     isPlaying: Boolean = false,
     isCleaning: Boolean = false,
     topInset: Dp = 0.dp,
-    bottomInset: Dp = 0.dp
+    bottomInset: Dp = 0.dp,
+    onPetBoundsChanged: (Rect) -> Unit = {}
 ) {
     // Making the sprite pulse on screen (will pulse faster when happiness meter is high)
     val breathDuration = (1500 - (happiness * 10)).coerceAtLeast(500)
@@ -128,6 +132,7 @@ fun PetDisplay(
                     translationX = offsetX
                     translationY = offsetY
                 }
+                .onGloballyPositioned { onPetBoundsChanged(it.boundsInRoot())}
                 .pointerInput(catSize, topInset, bottomInset, limitX, minY, maxY) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
