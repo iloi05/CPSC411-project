@@ -61,7 +61,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     // Automatically clear the reaction after 5 seconds
     LaunchedEffect(petReaction) {
         if (petReaction != null) {
-            delay(5000)
+            delay(5.seconds)
             chatViewModel.clearReaction()
         }
     }
@@ -234,8 +234,9 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                 Button(
                     onClick = { showChatDialog = true },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    // FIXED: Redundancy caused by import and the names you had, shortened this
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
                     )
                 ) {
                     Text("Chat with your Pet!", fontSize = 18.sp)
@@ -246,46 +247,73 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        onClick = {
-                            happiness = changeStat(happinessKey, happinessTimeKey, 50, 15)
-                            playCount++ // will play animation of cat in box if user picked cat
-                            chatViewModel.reactToAction("Play", petType, happiness, hunger, clean)
-                        },
+                    Box(
                         modifier = Modifier.weight(1f).height(50.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Play", fontSize = 16.sp, maxLines = 1)
+                        SpriteAnimation(
+                            sheetRes = R.drawable.play,
+                            row = 0,
+                            frameCount = 1,
+                            frameSize = 32,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clickable {
+                                    happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
+                                    chatViewModel.reactToAction("Play", petType, happiness, hunger, clean)
+                                }
+                        )
                     }
-                    Button(
-                        onClick = {
-                            happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
-                            chatViewModel.reactToAction("Pet", petType, happiness, hunger, clean)
-                        },
+                    Box(
+                        modifier = Modifier.weight(1f).height(64.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        SpriteAnimation(
+                            sheetRes = R.drawable.pet,
+                            row = 0,
+                            frameCount = 1,
+                            frameSize = 32,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clickable {
+                                    happiness = changeStat(happinessKey, happinessTimeKey, 50, 5)
+                                    chatViewModel.reactToAction("Pet", petType, happiness, hunger, clean)
+                                }
+                        )
+                    }
+                    Box(
                         modifier = Modifier.weight(1f).height(50.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Pet", fontSize = 16.sp, maxLines = 1)
+                        SpriteAnimation(
+                            sheetRes = R.drawable.feed,
+                            row = 0,
+                            frameCount = 1,
+                            frameSize = 32,
+                            modifier = Modifier
+                                .size(85.dp)
+                                .clickable {
+                                    hunger = changeStat(hungerKey, hungerTimeKey, 50, 5)
+                                    chatViewModel.reactToAction("Feed", petType, happiness, hunger, clean)
+                                }
+                        )
                     }
-                    Button(
-                        onClick = {
-                            hunger = changeStat(hungerKey, hungerTimeKey, 100, 20)
-                            feedCount++
-                            chatViewModel.reactToAction("Feed", petType, happiness, hunger, clean)
-                        },
-                        modifier = Modifier.weight(1f).height(50.dp)
+                    Box(
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Feed", fontSize = 16.sp, maxLines = 1)
-                    }
-                    Button(
-                        onClick = {
-                            clean = changeStat(cleanKey, cleanTimeKey, 100, 20)
-                            cleanCount++
-                            chatViewModel.reactToAction("Clean", petType, happiness, hunger, clean)
-                        },
-                        modifier = Modifier.weight(1f).height(50.dp)
-                    ) {
-                        Text("clean", fontSize = 16.sp, maxLines = 1)
+                        SpriteAnimation(
+                            sheetRes = R.drawable.clean,
+                            row = 0,
+                            frameCount = 1,
+                            frameSize = 32,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clickable {
+                                    clean = changeStat(cleanKey, cleanTimeKey, 50, 5)
+                                    chatViewModel.reactToAction("Clean", petType, happiness, hunger, clean)
+                                }
+                        )
                     }
                 }
             }
