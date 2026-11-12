@@ -44,10 +44,10 @@ import com.example.cpsc411_project.ui.components.SpriteRegion
 
 
 // Buttons and information for sprite go here
-private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
-private const val CLEAN_DECAY_INTERVAL_MS = 30 * 60 * 1000L
-private const val HUNGER_DECAY_INTERVAL_MS = 40 * 60 * 1000L
-private const val POINTS_PER_INTERVAL = 5
+private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L // pet and play decay every 6 mins
+private const val CLEAN_DECAY_INTERVAL_MS = 30 * 60 * 1000L // clean decays every 30 mins
+private const val HUNGER_DECAY_INTERVAL_MS = 40 * 60 * 1000L // hunger decays every 40 mins
+private const val POINTS_PER_INTERVAL = 5 // meters go up by 5
 
 @Composable
 fun GameScreen(onOpenSettings: () -> Unit) {
@@ -197,6 +197,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             bottomInset = 190.dp,
             onPetBoundsChanged = { petBounds = it }
         )
+        // settings button
         SpriteAnimation(
             sheetRes = R.drawable.button,
             row = 9,
@@ -279,6 +280,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // play button
                     Box(
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentAlignment = Alignment.Center
@@ -297,6 +299,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 }
                         )
                     }
+                    // pet button
                     Box(
                         modifier = Modifier.weight(1f).height(64.dp),
                         contentAlignment = Alignment.Center
@@ -314,6 +317,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 }
                         )
                     }
+                    // feed button
                     Box(
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentAlignment = Alignment.Center
@@ -332,6 +336,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                                 }
                         )
                     }
+                    // clean button
                     Box(
                         modifier = Modifier.weight(1f).height(50.dp),
                         contentAlignment = Alignment.Center
@@ -353,6 +358,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
             }
 
         }
+        // draggable soap (disappears when clean meter reaches 100)
         if (showSoap) {
             Image(
                 painter = painterResource(R.drawable.soap),
@@ -366,7 +372,7 @@ fun GameScreen(onOpenSettings: () -> Unit) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
                             soapOffset += dragAmount
-
+                            // raises clean meter if soap is dragged over pet
                             if (petBounds.contains(soapCenter)) {
                                 scrubDistance += dragAmount.getDistance()
                                 if (scrubDistance >= 120f) {

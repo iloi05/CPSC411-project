@@ -59,6 +59,7 @@ fun SettingsScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var volume by remember { mutableFloatStateOf(SoundManager.getVolume()) }
 
+    // starts music when game is opened (game screen and setting screen only)
     LaunchedEffect(Unit) {
         SoundManager.startMusic(context)
     }
@@ -94,9 +95,10 @@ fun SettingsScreen(
             VolumeBar(
                 sheetRes = R.drawable.settings,
                 volume = volume,
+                // volume bar sprite reports change
                 onVolumeChange = {
-                    volume = it
-                    SoundManager.setVolume(context, it)
+                    volume = it // brown bars turn green vice versa
+                    SoundManager.setVolume(context, it) // saves changed volume
                 },
                 modifier = Modifier.width(200.dp).height(60.dp),
                 emptyX = 2, fullX = 50, srcY = 195, srcW = 44, srcH = 12,
@@ -240,7 +242,7 @@ fun VolumeBar(
         val thumbDstW = thumbDstH * thumbW / thumbH
         val thumbLeft = (volume * size.width - thumbDstW / 2f)
             .coerceIn(0f, size.width - thumbDstW)
-
+        // draws the nob on the volume bar
         drawImage(
             image = sheet,
             srcOffset = IntOffset(thumbX, thumbY),

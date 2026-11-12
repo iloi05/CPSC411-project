@@ -114,7 +114,7 @@ fun PetDisplay(
             val containerWidthPx = maxWidth.toPx()
             val containerHeightPx = maxHeight.toPx()
             val petSizePx = catSize.toPx()
-
+            // limits how far the pat can be dragged around on the screen
             val extraX = 60.dp.toPx()
             val extraY = 40.dp.toPx()
             limitX = ((containerWidthPx - petSizePx) / 2f).coerceAtLeast(0f) + extraX
@@ -136,6 +136,7 @@ fun PetDisplay(
                 .pointerInput(catSize, topInset, bottomInset, limitX, minY, maxY) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
+                        // enforcing dragging limit
                         offsetX = (offsetX + dragAmount.x).coerceIn(-limitX, limitX)
                         offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
                     }
@@ -155,7 +156,7 @@ fun PetDisplay(
                     }
             )
         }
-
+        // draws bowl with food if pet is eating
         if (isEating) {
             SpriteAnimation(
                 sheetRes = R.drawable.catitems,
