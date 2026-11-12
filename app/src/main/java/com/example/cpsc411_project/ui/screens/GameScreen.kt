@@ -44,6 +44,8 @@ import androidx.compose.ui.res.painterResource
 
 // Buttons and information for sprite go here
 private const val DECAY_INTERVAL_MS = 6 * 60 * 1000L
+private const val CLEAN_DECAY_INTERVAL_MS = 30 * 60 * 1000L
+private const val HUNGER_DECAY_INTERVAL_MS = 40 * 60 * 1000L
 private const val POINTS_PER_INTERVAL = 5
 
 @Composable
@@ -83,10 +85,15 @@ fun GameScreen(onOpenSettings: () -> Unit) {
     val cleanKey = "clean_$petType"
     val cleanTimeKey = "cleanUpdate_$petType"
     fun applyDecay(valueKey: String, timeKey: String, default: Int): Int {
+        val intervalMs = when (valueKey) {
+            cleanKey -> CLEAN_DECAY_INTERVAL_MS
+            hungerKey -> HUNGER_DECAY_INTERVAL_MS
+            else -> DECAY_INTERVAL_MS
+        }
         val now = System.currentTimeMillis()
         val saved = prefs.getInt(valueKey, default)
         val last = prefs.getLong(timeKey, now)
-        val intervals = ((now - last) / DECAY_INTERVAL_MS).toInt().coerceAtLeast(0)
+        val intervals = ((now - last) / intervalMs).toInt().coerceAtLeast(0)
         val current = (saved - intervals * POINTS_PER_INTERVAL).coerceIn(0, 100)
 
         prefs.edit {
