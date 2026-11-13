@@ -30,8 +30,8 @@ class PetChatViewModel : ViewModel() {
     }
 
     private val config = generationConfig {
-        maxOutputTokens = 100
-        temperature = 0.8f
+        maxOutputTokens = 60
+        temperature = 0.7f
     }
 
     private fun getSystemInstruction(petType: String, happiness: Int, hunger: Int, clean: Int) = content {
@@ -56,7 +56,7 @@ class PetChatViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val model = GenerativeModel(
-                    modelName = "gemini-3.1-flash-lite",
+                    modelName = "gemini-3.5-flash-lite",
                     apiKey = BuildConfig.GEMINI_API_KEY,
                     generationConfig = config,
                     systemInstruction = getSystemInstruction(petType, happiness, hunger, clean),
@@ -71,6 +71,13 @@ class PetChatViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 println("Gemini API Error: ${e.message}")
+                // In-character fallback reaction if AI is temporarily unavailable
+                _petReaction.value = when (action) {
+                    "Feed" -> "*happily munches the food*"
+                    "Play" -> "*bounces around playfully*"
+                    "Pet" -> "*leans into your hand happily*"
+                    else -> "*looks at you with affection*"
+                }
             }
         }
     }
@@ -82,7 +89,7 @@ class PetChatViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val model = GenerativeModel(
-                    modelName = "gemini-3.1-flash-lite",
+                    modelName = "gemini-3.5-flash-lite",
                     apiKey = BuildConfig.GEMINI_API_KEY,
                     generationConfig = config,
                     systemInstruction = getSystemInstruction(petType, happiness, hunger, clean),
@@ -90,16 +97,65 @@ class PetChatViewModel : ViewModel() {
                 )
 
                 val chat = model.startChat()
-                val response = chat.sendMessage(message)
+                var fullResponse = ""
+                var messageAdded = false
 
-                _messages.value += ChatMessage(response.text ?: "...", isUser = false)
+                try {
+                    chat.sendMessageStream(message).collect { chunk ->
+                        val textChunk = chunk.text.orEmpty()
+                        if (textChunk.isNotEmpty()) {
+                            fullResponse += textChunk
+                            if (!messageAdded) {
+                                _isLoading.value = false
+                                _messages.value = _messages.value + ChatMessage(fullResponse, isUser = false)
+                                messageAdded = true
+                            } else {
+                                _messages.value = _messages.value.dropLast(1) + ChatMessage(fullResponse, isUser = false)
+                            }
+                        }
+                    }
+                    if (!messageAdded) {
+                        _messages.value = _messages.value + ChatMessage("...", isUser = false)
+                    }
+                } catch (e: Exception) {
+                    val err = e.message.orEmpty()
+                    if (!messageAdded && (err.contains("503") || err.contains("high demand", ignoreCase = true) || err.contains("UNAVAILABLE", ignoreCase = true))) {
+                        kotlinx.coroutines.delay(1000)
+                        chat.sendMessageStream(message).collect { chunk ->
+                            val textChunk = chunk.text.orEmpty()
+                            if (textChunk.isNotEmpty()) {
+                                fullResponse += textChunk
+                                if (!messageAdded) {
+                                    _isLoading.value = false
+                                    _messages.value = _messages.value + ChatMessage(fullResponse, isUser = false)
+                                    messageAdded = true
+                                } else {
+                                    _messages.value = _messages.value.dropLast(1) + ChatMessage(fullResponse, isUser = false)
+                                }
+                            }
+                        }
+                    } else {
+                        throw e
+                    }
+                }
 
             } catch (e: Exception) {
-                if (e.message?.contains("429") == true || e.message?.contains("quota", ignoreCase = true) == true) {
-                    _messages.value += ChatMessage("(Your pet is sleeping... You've reached the API limit for now. Try again later!)", isUser = false)
-                } else {
-                    _messages.value += ChatMessage("Error: ${e.message}", isUser = false)
+                val errorMsg = e.message.orEmpty()
+                val friendlyMessage = when {
+                    errorMsg.contains("429") || errorMsg.contains("quota", ignoreCase = true) -> {
+                        "(Your pet is sleeping... You've reached the API limit for now. Try again later!)"
+                    }
+                    errorMsg.contains("503") || errorMsg.contains("high demand", ignoreCase = true) || errorMsg.contains("UNAVAILABLE", ignoreCase = true) -> {
+                        "(Your pet got distracted... The AI server is experiencing high demand. Please try again in a moment!)"
+                    }
+                    errorMsg.contains("API_KEY_INVALID", ignoreCase = true) || errorMsg.contains("API key not valid", ignoreCase = true) -> {
+                        "(Invalid API key. Please check your GEMINI_API_KEY in local.properties.)"
+                    }
+                    else -> {
+                        "(Your pet tilted their head in confusion and didn't catch that. Please try again!)"
+                    }
                 }
+                _messages.value += ChatMessage(friendlyMessage, isUser = false)
             } finally {
                 _isLoading.value = false
             }
