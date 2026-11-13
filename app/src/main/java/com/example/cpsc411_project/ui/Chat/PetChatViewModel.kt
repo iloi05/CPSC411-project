@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cpsc411_project.BuildConfig
 import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.RequestOptions
 import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,8 +58,7 @@ class PetChatViewModel : ViewModel() {
                     modelName = "gemini-3.5-flash-lite",
                     apiKey = BuildConfig.GEMINI_API_KEY,
                     generationConfig = config,
-                    systemInstruction = getSystemInstruction(petType, happiness, hunger, clean),
-                    requestOptions = RequestOptions(apiVersion = "v1")
+                    systemInstruction = getSystemInstruction(petType, happiness, hunger, clean)
                 )
 
                 val prompt = "Your owner just clicked the '$action' button. React to this action."
@@ -71,6 +69,7 @@ class PetChatViewModel : ViewModel() {
 
             } catch (e: Exception) {
                 println("Gemini API Error: ${e.message}")
+                e.printStackTrace()
                 // In-character fallback reaction if AI is temporarily unavailable
                 _petReaction.value = when (action) {
                     "Feed" -> "*happily munches the food*"
@@ -92,8 +91,7 @@ class PetChatViewModel : ViewModel() {
                     modelName = "gemini-3.5-flash-lite",
                     apiKey = BuildConfig.GEMINI_API_KEY,
                     generationConfig = config,
-                    systemInstruction = getSystemInstruction(petType, happiness, hunger, clean),
-                    requestOptions = RequestOptions(apiVersion = "v1")
+                    systemInstruction = getSystemInstruction(petType, happiness, hunger, clean)
                 )
 
                 val chat = model.startChat()
@@ -140,7 +138,9 @@ class PetChatViewModel : ViewModel() {
                 }
 
             } catch (e: Exception) {
-                val errorMsg = e.message.orEmpty()
+                println("Gemini Chat Error: ${e.message}")
+                e.printStackTrace()
+                val errorMsg = e.message.orEmpty() + " " + (e.cause?.message ?: "")
                 val friendlyMessage = when {
                     errorMsg.contains("429") || errorMsg.contains("quota", ignoreCase = true) -> {
                         "(Your pet is sleeping... You've reached the API limit for now. Try again later!)"
